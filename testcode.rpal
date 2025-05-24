@@ -1,0 +1,2 @@
+let posNeg n = n gr 0 -> 'Positive' | n ls 0 -> 'Negative' | 'Zero'
+in Print (posNeg 10)
