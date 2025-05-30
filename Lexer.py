@@ -54,14 +54,4 @@ class Lexer:
                 self.tokens.append(Token(kind.lower(), value))
 
 
-def read_file(filename):
-    with open(filename, 'r') as file:
-        return file.read()
 
-
-code = read_file("testcode.rpal")
-lexer = Lexer(code)
-lexer.tokenize()
-
-for token in lexer.tokens:
-    print(token)
