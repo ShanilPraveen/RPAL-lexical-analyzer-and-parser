@@ -56,5 +56,22 @@ class Parser:
             return self.parse_Ew()
 
 
+    def parse_Ew(self):
+        t = self.parse_T()
+
+        token = self.peek()
+        if token and token.type == "where":
+            self.match("where")
+            dr = self.parse_Dr()
+            return build_tree("where",[t,dr])
+
+        return t
+
+
+
+
+
+
+
 
 
