@@ -1,7 +1,7 @@
 from .tree import build_tree
 from .Lexer import Token
-from .ast_nodes import (LetNode, LambdaNode, RnNode, 
-GammaNode, CommaNode, VbNode)
+from .ast_nodes import (LetNode, LambdaNode, RnNode, FcnFormNode, RecNode,
+GammaNode, CommaNode, VbNode, AssignmentNode, AndNode, WithinNode)
 
 class Parser:
     def __init__(self,tokens):
@@ -24,6 +24,12 @@ class Parser:
         if self.position > 0:
             return self.tokens[self.position - 1]
         return None
+    
+    def reversePos(self):
+        if self.position > 0:
+            self.position -= 1
+        else:
+            return None
 
     def expect(self,expected_type):
         token = self.match(expected_type)
@@ -87,9 +93,9 @@ class Parser:
             elif token.type == 'integer':
                 self.match('integer')
                 return RnNode('integer', token.value) #can pass int
-            elif token.type == 'srting':
-                self.match('srting')
-                return RnNode('srting', token.value)
+            elif token.type == 'string':
+                self.match('string')
+                return RnNode('string', token.value)
             elif token.type == 'true':
                 self.match('true')
                 return RnNode('true', token.value) #can pass True
@@ -131,20 +137,15 @@ class Parser:
     
     def parse_V1(self):
         params = []
-        token = self.peek()
-        nextExpected = 'identifier'
-        while (token and token.type==nextExpected):
-            if(nextExpected == 'identifier'):
-                params.append(self.match('identifier'))
-                nextExpected = 'delimiter'
-            elif(nextExpected == 'delimiter' and token.value == ','):
-                self.match('delimiter')
-                nextExpected = 'identifier'
-            else:
-                break
+        params.append(self.expect('identifier')) 
+        while self.peek() and self.peek().type == 'delimiter' and self.peek().value == ',':
+            self.match('delimiter')
+            params.append(self.expect('identifier'))
         
-        if len(params)<2:
-            raise SyntaxError("Expected at least two identifiers separated by commas")
+        if len(params)==0:
+            raise SyntaxError("Expected at least one identifier in paranthesis")
+        elif len(params) == 1:
+            return VbNode(params[0].value)
         else:
             return CommaNode(params)
 
@@ -162,22 +163,85 @@ class Parser:
             else:
                 raise SyntaxError(f"Unexpected token: {token}")
             
-
+    
+    def parse_Db(self):
+        token = self.peek()
+        if token:
+            if token.type == 'identifier':
+                identifier = self.match('identifier')
+                next_token = self.peek()
+                if next_token:
+                    if(next_token.type == 'delimeter' and next_token.value == ','):
+                        self.reversePos()
+                        v1 = self.parse_V1()
+                        self.expect('operator')
+                        e = self.parse_E()
+                        return AssignmentNode(v1, e)
+                    else:
+                        Vbs = []
+                        while True:
+                            vb = self.parse_Vb()
+                            Vbs.append(vb)
+                            if self.peek() and self.peek().value == '=':
+                                break
+                        if len(Vbs) == 0:
+                            raise SyntaxError("Expected at least one variable binding")
+                        self.expect('operator')
+                        e = self.parse_E()
+                        return FcnFormNode(identifier.value, Vbs, e)
+                else:
+                    raise SyntaxError("Unexpected end of input while parsing DbNode")
+            elif token.type == 'delimiter' and token.value == '(':
+                self.match('delimiter')
+                d = self.parse_D()
+                self.expect('delimiter')
+                return d
+            else:
+                raise SyntaxError(f"Unexpected token: {token}")
+        else:
+            raise SyntaxError("Unexpected end of input while parsing DbNode")
+        
+    def parse_Dr(self):
+        token = self.peek()
+        if token:
+            if token.type == 'rec':
+                self.expect('rec')
+                Db = self.parse_Db()
+                return RecNode(Db)
+            else:
+                return self.parse_Db()
+        else:
+            raise SyntaxError("Unexpected end of input while parsing DrNode")
+        
+    def parse_Da(self):
+        token = self.peek()
+        if token:
+            Drs = []
+            while True:
+                Dr = self.parse_Dr()
+                Drs.append(Dr)
+                if self.peek() and self.peek().value == 'and':
+                    self.expect('and')
+                else:
+                    break
+            if len(Drs) == 0:
+                raise SyntaxError("Expected at least one declaration")
+            elif len(Drs) == 1:
+                return Drs[0]
+            else:
+                return AndNode(Drs)
+        else:
+            raise SyntaxError("Unexpected end of input while parsing DaNode")
+        
     def parse_D(self):
         token = self.peek()
-        return None
-    
-    # def parse_Db(self):
-    #     token = self.peek()
-    #     if token:
-    #         if token.type == 'identifier':
-    #             identifier = self.match('identifier')
-    #             if
-    #         elif token.type == 'delimiter' and token.value == '(':
-    #             self.match('delimiter')
-    #             vb_list = self.parse_V1()
-    #             self.expect('delimiter')
-    #             return vb_list
-    #         else:
-    #             raise SyntaxError(f"Unexpected token: {token}")
-        
+        if token:
+            Da = self.parse_Da()
+            if self.peek() and self.peek().value == 'within':
+                self.expect('within')
+                D = self.parse_D()
+                return WithinNode(Da, D)
+            else:
+                return Da
+        else:
+            raise SyntaxError("Unexpected end of input while parsing DNode")

@@ -78,3 +78,52 @@ class VbNode(ASTNode):
     def standardize(self):
         # Standardize logic goes here
         return f"Vb({self.value})"
+    
+class AssignmentNode(ASTNode):
+    def __init__(self, v1, Exp):
+        super().__init__('assignment', '=')
+        self.v1 = v1
+        self.e = Exp
+    
+    def standardize(self):
+        # Standardize logic goes here
+        return f"Assignment({self.v1}, {self.e})"
+    
+class FcnFormNode(ASTNode):
+    def __init__(self, name, Vbs, Exp):
+        super().__init__('fcn_form', 'function')
+        self.name = name
+        self.Vbs = Vbs
+        self.E = Exp
+    
+    def standardize(self):
+        # Standardize logic goes here
+        return f"FcnForm({self.Vbs}, {self.E})"
+    
+class RecNode(ASTNode):
+    def __init__(self, Db):
+        super().__init__('rec', 'rec')
+        self.Db = Db
+    
+    def standardize(self):
+        # Standardize logic goes here
+        return f"Rec({self.Db})"
+    
+class AndNode(ASTNode):
+    def __init__(self, Drs):
+        super().__init__('and', 'and')
+        self.Drs = Drs
+
+    def standardize(self):
+        # Standardize logic goes here
+        return f"And({self.Drs})"
+
+class WithinNode(ASTNode):
+    def __init__(self, Db, D):
+        super().__init__('within', 'within')
+        self.Db = Db
+        self.D = D
+
+    def standardize(self):
+        # Standardize logic goes here
+        return f"Within({self.Db}, {self.D})"    
