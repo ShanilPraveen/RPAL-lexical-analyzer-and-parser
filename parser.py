@@ -1,5 +1,6 @@
 from .tree import build_tree
 from .Lexer import Token
+from .ast_nodes import (LetNode, LambdaNode)
 
 class Parser:
     def __init__(self,tokens):
@@ -34,7 +35,7 @@ class Parser:
             d = self.parse_D()
             self.expect('in')
             e = self.parse_E()
-            return build_tree('let',[d,e])
+            return LetNode(d,e)
 
         elif token and token.type == 'fn':
             self.match('fn')
@@ -49,7 +50,12 @@ class Parser:
 
             self.expect('.')
             e = self.parse_E()
-            return build_tree('lambda',vb_list + [e])
+
+            for i in range(len(vb_list)-1, -1, -1):
+                vb = vb_list[i]
+                # Create a LambdaNode for each variable binding
+                e = LambdaNode(vb, e)
+            return e
 
 
         else:
