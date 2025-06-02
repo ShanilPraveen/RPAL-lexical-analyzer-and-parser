@@ -33,7 +33,24 @@ class LambdaNode(ASTNode):
     def standardize(self):
         # Standardize logic goes here
         return f"Lambda({self.Vb}, {self.E})"
+    
+class GammaNode(ASTNode):
+    def __init__(self, N, E):
+        super().__init__('gamma', 'gamma')
+        self.N = N
+        self.E = E
+    
+    def standardize(self):
+        # Standardize logic goes here
+        return f"Gamma({self.N}, {self.E})"
 
+class RnNode(ASTNode):
+    def __init__(self, randType, rand):
+        super().__init__(randType, rand)
+    
+    def standardize(self):
+        # Standardize logic goes here
+        return f"Rn({self.type}, {self.value})"
     
 class LetNode(ASTNode):
     def __init__(self, Def, Exp):
@@ -44,3 +61,20 @@ class LetNode(ASTNode):
     def standardize(self):
         # Standardixe logic goes here
         return f"Let({self.D}, {self.E})"
+    
+class CommaNode(ASTNode):
+    def __init__(self, params):
+        super().__init__('comma', ',')
+        self.params = params
+    
+    def standardize(self):
+        # Standardize logic goes here
+        return f"Comma({self.params})"
+    
+class VbNode(ASTNode):
+    def __init__(self, name):
+        super().__init__('Vb', name)
+    
+    def standardize(self):
+        # Standardize logic goes here
+        return f"Vb({self.value})"
