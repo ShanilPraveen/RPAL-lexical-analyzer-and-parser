@@ -1,7 +1,6 @@
+from ast_nodes import LetNode, LambdaNode, WhereNode
 from .tree import build_tree
 from .Lexer import Token
-from .ast_nodes import (LetNode, LambdaNode, RnNode, 
-GammaNode, CommaNode, VbNode)
 
 class Parser:
     def __init__(self,tokens):
@@ -13,24 +12,18 @@ class Parser:
             return self.tokens[self.position]
         return None
 
-    def match(self,expected_type):
+    def match(self, expected):
         token = self.peek()
-        if token and token.type == expected_type:
+        if token and (token.type == expected or token.value == expected):
             self.position += 1
             return token
         return None
-    
-    def prevToken(self):
-        if self.position > 0:
-            return self.tokens[self.position - 1]
-        return None
 
-    def expect(self,expected_type):
-        token = self.match(expected_type)
+    def expect(self, expected):
+        token = self.match(expected)
         if token is None:
-            raise SyntaxError(f"Expected {expected_type} but found {self.peek()}")
+            raise SyntaxError(f"Expected {expected} but found {self.peek()}")
         return token
-
 
     def parse_E(self):
         token = self.peek()
@@ -49,18 +42,15 @@ class Parser:
             while True:
                 vb = self.parse_Vb()
                 vb_list.append(vb)
-
-                if self.peek() and self.peek().value == '.':
+                next_token = self.peek()
+                if next_token and next_token.value == '.':
                     break
+                if not next_token:
+                    raise SyntaxError("Expected '.' after fn arguments")
 
             self.expect('.')
             e = self.parse_E()
-
-            for i in range(len(vb_list)-1, -1, -1):
-                vb = vb_list[i]
-                # Create a LambdaNode for each variable binding
-                e = LambdaNode(vb, e)
-            return e
+            return LambdaNode(vb_list,e)
 
 
         else:
@@ -74,110 +64,208 @@ class Parser:
         if token and token.type == "where":
             self.match("where")
             dr = self.parse_Dr()
-            return build_tree("where",[t,dr])
+            return WhereNode(t,dr)
 
         return t
-    
-    def parse_Rn(self):
-        token =self.peek()
-        if token:
-            if token.type == 'identifier':
-                self.match('identifier')
-                return RnNode('identifier', token.value)
-            elif token.type == 'integer':
-                self.match('integer')
-                return RnNode('integer', token.value) #can pass int
-            elif token.type == 'srting':
-                self.match('srting')
-                return RnNode('srting', token.value)
-            elif token.type == 'true':
-                self.match('true')
-                return RnNode('true', token.value) #can pass True
-            elif token.type == 'false':
-                self.match('false')
-                return RnNode('false', token.value) #can pass False 
-            elif token.type == 'nil':
-                self.match('nil')
-                return RnNode('nil', token.value) #can pass None
-            elif (token.type == 'delimiter' and token.value == '('):
-                self.match('delimiter')
-                e = self.parse_E()
-                self.expect('delimiter')
-                return e
-            else:
-                raise SyntaxError(f"Unexpected token: {token}")
-        else:
-            raise SyntaxError("Unexpected end of input while parsing RnNode")
-        
-    def parse_R(self):
-        operands = []
+
+    def parse_T(self):
+        ta_list = [self.parse_Ta()]
+
         while True:
-            try:
-                Rn = self.parse_Rn()
-                operands.append(Rn)
-            except SyntaxError:
-                # If we can't parse another Rn, break the loop
-                break
-        if not operands:
-            raise SyntaxError("Expected at least one operand")
-        elif len(operands) == 1:
-            return operands[0]
-        else:
-            for i in range(len(operands)-1, -1, -1):
-                Rn = operands[i]
-                # Create a GammaNode for each operand
-                node = GammaNode(node, Rn)
-            return node
-    
-    def parse_V1(self):
-        params = []
-        token = self.peek()
-        nextExpected = 'identifier'
-        while (token and token.type==nextExpected):
-            if(nextExpected == 'identifier'):
-                params.append(self.match('identifier'))
-                nextExpected = 'delimiter'
-            elif(nextExpected == 'delimiter' and token.value == ','):
-                self.match('delimiter')
-                nextExpected = 'identifier'
+            token = self.peek()
+            if token and token.value == ",":
+                self.match(',')
+                ta = self.parse_Ta()
+                ta_list.append(ta)
             else:
                 break
-        
-        if len(params)<2:
-            raise SyntaxError("Expected at least two identifiers separated by commas")
+
+        if len(ta_list) == 1:
+            return ta_list[0]
         else:
-            return CommaNode(params)
+            return TauNode(ta_list)
 
-    def parse_Vb(self):
-        token = self.peek()
-        if token:
-            if token.type == 'identifier':
-                identifier = self.match('identifier')
-                return VbNode(identifier.value)
-            elif token.type == 'delimiter' and token.value == '(':
-                self.match('delimiter')
-                vb_list = self.parse_V1()
-                self.expect('delimiter')
-                return vb_list
+    def parse_Ta(self):
+        node = self.parse_Tc()
+
+        while True:
+            token = self.peek()
+            if token and token.value == 'aug':
+                self.match('aug')
+                right = self.parse_Tc()
+                node = AugNode(node, right)
             else:
-                raise SyntaxError(f"Unexpected token: {token}")
-            
+                break
 
-    def parse_D(self):
+        return node
+
+    def parse_Tc(self):
+        b = self.parse_B()
         token = self.peek()
-        return None
-    
-    # def parse_Db(self):
-    #     token = self.peek()
-    #     if token:
-    #         if token.type == 'identifier':
-    #             identifier = self.match('identifier')
-    #             if
-    #         elif token.type == 'delimiter' and token.value == '(':
-    #             self.match('delimiter')
-    #             vb_list = self.parse_V1()
-    #             self.expect('delimiter')
-    #             return vb_list
-    #         else:
-    #             raise SyntaxError(f"Unexpected token: {token}")
-        
+        if token and token.value == '->':
+            self.match('->')
+            tc1 = self.parse_Tc()
+            self.expect('|')
+            tc2 = self.parse_Tc()
+            return ArrowNode(b, tc1, tc2)
+
+        return b
+
+    def parse_B(self):
+        node = self.parse_Bt()
+        while True :
+            if self.peek() and self.peek().value == 'or':
+                self.match('or')
+                next_bt = self.parse_Bt()
+                node = OrNode(node,next_bt)
+            else:
+                break
+
+        return node
+
+    def parse_Bt(self):
+        node = self.parse_Bs()
+        while True:
+            if self.peek() and self.peek().value == '&':
+                self.match('&')
+                next_bs = self.parse_Bs()
+                node = AndNode(node, next_bs)
+            else:
+                break
+
+        return node
+
+    def parse_Bs(self):
+        token = self.peek()
+        if token and token.value == 'not':
+            self.match('not')
+            bp = self.parse_Bp()
+            return NotNode(bp)
+
+        return self.parse_Bp()
+
+    def parse_Bp(self):
+        a1 = self.parse_A()
+        token = self.peek()
+
+        if token and token.value in ('gr', '>'):
+            self.match(token.value)
+            a2 = self.parse_A()
+            return GreaterThanNode(a1, a2)
+
+        elif token and token.value in ('ge', '>='):
+            self.match(token.value)
+            a2 = self.parse_A()
+            return GreaterThanOrEqualNode(a1, a2)
+
+        elif token and token.value in ('ls', '<'):
+            self.match(token.value)
+            a2 = self.parse_A()
+            return LessThanNode(a1, a2)
+
+        elif token and token.value in ('le', '<='):
+            self.match(token.value)
+            a2 = self.parse_A()
+            return LessThanOrEqualNode(a1, a2)
+
+        elif token and token.value == 'eq':
+            self.match('eq')
+            a2 = self.parse_A()
+            return EqualNode(a1, a2)
+
+        elif token and token.value == 'ne':
+            self.match('ne')
+            a2 = self.parse_A()
+            return NotEqualNode(a1, a2)
+
+        return a1
+
+    def parse_A(self):
+        token = self.peek()
+
+        if token and token.value == '+':
+            self.match('+')
+            at = self.parse_At()
+            return ArithmeticNode('+', 0 , at)
+
+        elif token and token.value == '-':
+            self.match('-')
+            at = self.parse_At()
+            return ArithmeticNode('neg', None, at)
+
+        node = self.parse_At()
+        while True:
+            token = self.peek()
+            if token and token.value == '+':
+                self.match('+')
+                right = self.parse_At()
+                node = ArithmeticNode('+', node, right)
+            elif token and token.value == '-':
+                self.match('-')
+                right = self.parse_At()
+                node = ArithmeticNode('-', node, right)
+            else:
+                break
+        return node
+
+    def parse_At(self):
+        node = self.parse_Af()
+        while True:
+            token = self.peek()
+            if token and token.value == '*':
+                self.match('*')
+                right = self.parse_Af()
+                node = ArithmeticNode('*', node, right)
+            elif token and token.value == '/':
+                self.match('/')
+                right = self.parse_Af()
+                node = ArithmeticNode('/', node, right)
+            else:
+                break
+        return node
+
+    def parse_Af(self):
+        node = self.parse_Ap()
+        while True:
+            token = self.peek()
+            if token and token.value == '**':
+                self.match('**')
+                right = self.parse_Ap()
+                node = ArithmeticNode('**', node, right)
+            else:
+                break
+        return node
+
+    def parse_Ap(self):
+        node = self.parse_R()
+
+        while True:
+            token = self.peek()
+            if token and token.value == '@':
+                self.match('@')
+
+                id_token = self.match('identifier')
+                if not id_token:
+                    raise SyntaxError("Expected identifier after '@'")
+
+                r = self.parse_R()
+                id_node = IDNode(id_token.value)
+
+                node = ArithmeticNode('@', node, [id_node, r])
+
+            else:
+                break
+
+        return node
+
+
+
+
+
+
+
+
+
+
+
+
