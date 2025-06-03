@@ -18,15 +18,16 @@ class Lexer:
         self.code = code
         self.tokens = []
         self.keywords = {
-            'let', 'in', 'where', 'within', 'and', 'nil',
-            'rec', 'function', 'lambda', 'true', 'false'
+            'let', 'in', 'where', 'within', 'and', 'nil', 'aug',
+            'rec', 'fn', 'lambda', 'true', 'false',
         }
 
         self.token_specification = [
+            ('KEYWORD',   r'\b(?:' + '|'.join(self.keywords) + r')\b'),
             ('STRING',     r"'([^'\\]|\\.)*'"),
             ('INTEGER',    r'\d+'),
+            ('OPERATOR',   r'eq|ne|gr|ge|ls|le|<=|>=|->|\*\*|=>|[+\-*/=<>&|@]'),
             ('IDENTIFIER', r'[a-zA-Z][a-zA-Z0-9_]*'),
-            ('OPERATOR',   r'==|!=|<=|>=|->|=>|[+\-*/=<>&|]'),
             ('DELIMITER',  r'[()\[\]{},;.]'),
             ('WHITESPACE', r'\s+'),
             ('COMMENT',    r'/\*.*?\*/'),
@@ -46,7 +47,7 @@ class Lexer:
             if kind == 'WHITESPACE' or kind == 'COMMENT':
                 continue
 
-            if kind == 'IDENTIFIER' and value in self.keywords:
+            if kind == 'KEYWORD':
                 self.tokens.append(Token(value, value))
             elif kind == 'UNKNOWN':
                 print(f"Unknown token: {value}")

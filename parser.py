@@ -66,11 +66,6 @@ class Parser:
 
             self.expect('.')
             e = self.parse_E()
-
-            # for i in range(len(vb_list)-1, -1, -1):
-            #     vb = vb_list[i]
-            #     # Create a LambdaNode for each variable binding
-            #     e = LambdaNode(vb, e)
             node = LambdaNode(vb_list, e)
             return node
 
@@ -357,14 +352,16 @@ class Parser:
                 # If we can't parse another Rn, break the loop
                 break
         if not operands:
+            print("Postion:" +str(self.position))
             raise SyntaxError("Expected at least one operand")
         elif len(operands) == 1:
             return operands[0]
         else:
-            for i in range(len(operands)-1, -1, -1):
+            node = operands[-1] 
+            for i in range(len(operands)-2, -1, -1):
                 Rn = operands[i]
                 # Create a GammaNode for each operand
-                node = GammaNode(node, Rn)
+                node = GammaNode(Rn, node)
             return node
         
     def parse_Rn(self):
@@ -399,9 +396,9 @@ class Parser:
                 self.match('nil')
                 return RnNode('nil', token.value) #can pass None
             elif (token.type == 'delimiter' and token.value == '('):
-                self.match('delimiter')
+                self.match('(')
                 e = self.parse_E()
-                self.expect('delimiter')
+                self.expect(')')
                 return e
             else:
                 raise SyntaxError(f"Unexpected token: {token}")
@@ -479,10 +476,10 @@ class Parser:
                 identifier = self.match('identifier')
                 next_token = self.peek()
                 if next_token:
-                    if(next_token.type == 'delimeter' and next_token.value == ','):
+                    if(next_token.value == ',' or next_token.value == '='):
                         self.reversePos()
                         v1 = self.parse_V1()
-                        self.expect('operator')
+                        self.expect('=')
                         e = self.parse_E()
                         return AssignmentNode(v1, e)
                     else:
@@ -528,22 +525,24 @@ class Parser:
                 self.expect('delimiter')
                 return vb_list
             else:
-                raise SyntaxError(f"Unexpected token: {token}")
+                raise SyntaxError(f"Unexpected token: {token} at {self.position}")
 
     def parse_V1(self):
         """
         Vl  -> '<IDENTIFIER>' list ','  => ','
         """
-        params = []
-        params.append(self.match('identifier')) 
+        paramToken = self.match('identifier')
+        params = [VbNode(paramToken.value)] if paramToken else []
+
         while self.peek() and self.peek().type == 'delimiter' and self.peek().value == ',':
             self.expect('delimiter')
-            params.append(self.match('identifier'))
+            paramToken = (self.match('identifier'))
+            params.append(VbNode(paramToken.value))
         
         if len(params)==0:
             raise SyntaxError("Expected at least one identifier in paranthesis")
         elif len(params) == 1:
-            return VbNode(params[0].value)
+            return params[0]
         else:
             return CommaNode(params)
 

@@ -185,7 +185,7 @@ class AssignmentNode(Node):
 
 class FcnFormNode(Node):
     def __init__(self, name, Vbs, Exp):
-        super().__init__('fcn_form', 'function')
+        super().__init__('function_form', 'fcn_form')
         self.name = name
         self.Vbs = Vbs
         self.E = Exp
@@ -218,7 +218,7 @@ class RecNode(Node):
         stDb = self.Db.standardize()
         if isinstance(stDb, AssignmentNode):
             lambdaNode = STLambdaNode(stDb.v1, stDb.e)
-            gammaNode = GammaNode('Y', lambdaNode)
+            gammaNode = GammaNode(VbNode('Y'), lambdaNode)
             return AssignmentNode(stDb.v1, gammaNode)  # Return an AssignmentNode for the recursive definition
         else:
             raise ValueError("Invalid definition in RecNode")
