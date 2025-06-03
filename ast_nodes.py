@@ -59,7 +59,7 @@ class LetNode(ASTNode):
         self.E = Exp
     
     def standardize(self):
-        # Standardixe logic goes here
+        # Standardize logic goes here
         return f"Let({self.D}, {self.E})"
     
 class CommaNode(ASTNode):
