@@ -1,6 +1,6 @@
 from .tree import build_tree
 from .Lexer import Token
-from .ast_nodes import (LetNode, LambdaNode, RnNode, FcnFormNode, RecNode,
+from .nodes import (LetNode, LambdaNode, RnNode, FcnFormNode, RecNode,
 GammaNode, CommaNode, VbNode, AssignmentNode, AndNode, WithinNode, WhereNode,
 TauNode, AugNode, ArrowNode, NotNode, BAndOrNode, ConditionNode, ArithmeticNode,
 NegNode, AtNode)
