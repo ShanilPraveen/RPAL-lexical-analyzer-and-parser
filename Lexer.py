@@ -12,7 +12,6 @@ class Token:
         return self.__str__()
 
 
-
 class Lexer:
     def __init__(self, code):
         self.code = code

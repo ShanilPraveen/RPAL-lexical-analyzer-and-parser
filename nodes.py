@@ -39,6 +39,20 @@ class STLambdaNode(Node):
         self.E.print(indent + 1)
 
 
+class IdentifierNode(Node):
+    def __init__(self, name):
+        super().__init__('Identifier', name)
+    
+    def standardize(self):
+        return self  # Return the node itself, as IdentifierNode is already standardized
+    
+    def __str__(self):
+        return f"Identifier({self.value})"
+    
+    def print(self, indent=0):
+        print(f'{self.indentationSymbol * indent}<ID:{self.value}>')
+
+
 class LambdaNode(Node):
     def __init__(self, Vbs, Exp):
         super().__init__('E', 'lambda')
@@ -149,20 +163,6 @@ class CommaNode(Node):
             param.print(indent + 1)
 
 
-class VbNode(Node):
-    def __init__(self, name):
-        super().__init__('Vb', name)
-    
-    def standardize(self):
-        return self  # Return the node itself, as Vb is already standardized
-    
-    def __str__(self):
-        return f"Vb({self.value})"
-    
-    def print(self, indent=0):
-        print(f'{self.indentationSymbol * indent}<ID:{self.value}>')
-
-
 class AssignmentNode(Node):
     def __init__(self, v1, Exp):
         super().__init__('assignment', '=')
@@ -218,7 +218,7 @@ class RecNode(Node):
         stDb = self.Db.standardize()
         if isinstance(stDb, AssignmentNode):
             lambdaNode = STLambdaNode(stDb.v1, stDb.e)
-            gammaNode = GammaNode(VbNode('Y'), lambdaNode)
+            gammaNode = GammaNode(IdentifierNode('Y*'), lambdaNode)
             return AssignmentNode(stDb.v1, gammaNode)  # Return an AssignmentNode for the recursive definition
         else:
             raise ValueError("Invalid definition in RecNode")
@@ -468,7 +468,7 @@ class AtNode(Node):
     def __init__(self, a1, Id, a2):
         super().__init__('at', '@')
         self.a1 = a1
-        self.Id = Id
+        self.Id = IdentifierNode(Id)
         self.a2 = a2
     
     def standardize(self):

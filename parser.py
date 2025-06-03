@@ -1,9 +1,9 @@
-from .tree import build_tree
-from .Lexer import Token
-from .nodes import (LetNode, LambdaNode, RnNode, FcnFormNode, RecNode,
-GammaNode, CommaNode, VbNode, AssignmentNode, AndNode, WithinNode, WhereNode,
+from tree import build_tree
+from Lexer import Token
+from nodes import (LetNode, LambdaNode, RnNode, FcnFormNode, RecNode,
+GammaNode, CommaNode, AssignmentNode, AndNode, WithinNode, WhereNode,
 TauNode, AugNode, ArrowNode, NotNode, BAndOrNode, ConditionNode, ArithmeticNode,
-NegNode, AtNode)
+NegNode, AtNode, IdentifierNode,)
 
 
 class Parser:
@@ -379,7 +379,7 @@ class Parser:
         if token:
             if token.type == 'identifier':
                 self.match('identifier')
-                return RnNode('identifier', token.value)
+                return IdentifierNode(token.value)
             elif token.type == 'integer':
                 self.match('integer')
                 return RnNode('integer', token.value) #can pass int
@@ -473,7 +473,7 @@ class Parser:
         token = self.peek()
         if token:
             if token.type == 'identifier':
-                identifier = self.match('identifier')
+                identifier = IdentifierNode(self.match('identifier').value)
                 next_token = self.peek()
                 if next_token:
                     if(next_token.value == ',' or next_token.value == '='):
@@ -493,7 +493,7 @@ class Parser:
                             raise SyntaxError("Expected at least one variable binding")
                         self.expect('=')
                         e = self.parse_E()
-                        return FcnFormNode(identifier.value, Vbs, e)
+                        return FcnFormNode(identifier, Vbs, e)
                 else:
                     raise SyntaxError("Unexpected end of input while parsing DbNode")
             elif token.type == 'delimiter' and token.value == '(':
@@ -518,12 +518,12 @@ class Parser:
         if token:
             if token.type == 'identifier':
                 identifier = self.match('identifier')
-                return VbNode(identifier.value)
+                return IdentifierNode(identifier.value)
             elif token.type == 'delimiter' and token.value == '(':
-                self.match('delimiter')
-                vb_list = self.parse_V1()
-                self.expect('delimiter')
-                return vb_list
+                self.match('(')
+                v1 = self.parse_V1()
+                self.expect(')')
+                return v1
             else:
                 raise SyntaxError(f"Unexpected token: {token} at {self.position}")
 
@@ -532,12 +532,12 @@ class Parser:
         Vl  -> '<IDENTIFIER>' list ','  => ','
         """
         paramToken = self.match('identifier')
-        params = [VbNode(paramToken.value)] if paramToken else []
+        params = [IdentifierNode(paramToken.value)] if paramToken else []
 
         while self.peek() and self.peek().type == 'delimiter' and self.peek().value == ',':
             self.expect('delimiter')
             paramToken = (self.match('identifier'))
-            params.append(VbNode(paramToken.value))
+            params.append(IdentifierNode(paramToken.value))
         
         if len(params)==0:
             raise SyntaxError("Expected at least one identifier in paranthesis")

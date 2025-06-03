@@ -1,6 +1,6 @@
 import sys
-from .Lexer import Lexer
-from .parser import Parser
+from Lexer import Lexer
+from parser import Parser
 
 def read_file(filename):
     with open(filename,'r') as f:
@@ -27,6 +27,7 @@ def main():
     parser = Parser(lexer.tokens)
     ast = parser.parse_E()
     ast.standardize().print()
+    # ast.print()
 
     # if show_ast_only:
     #     ast.print()
