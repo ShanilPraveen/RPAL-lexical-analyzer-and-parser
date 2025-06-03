@@ -24,7 +24,7 @@ def main():
     ast = parser.parse_E()
 
     if show_ast_only:
-        print(ast)
+        ast.print()
 
     else:
         print("Output of the above program is:")

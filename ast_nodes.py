@@ -7,6 +7,8 @@ __all__ = [
     ]
 
 class ASTNode(ABC):
+    indentationSymbol = '.'
+
     def __init__(self, type_, value):
         super().__init__()
         self.type = type_
@@ -15,6 +17,11 @@ class ASTNode(ABC):
     @abstractmethod
     def standardize(self):
         # This method should be implemented by subclasses to standardize the node
+        pass
+
+    @abstractmethod
+    def print(self, indent=0):
+        # This method should be implemented by subclasses to print the node
         pass
         
     def __str__(self):
@@ -34,6 +41,11 @@ class LambdaNode(ASTNode):
         # Standardize logic goes here
         return f"Lambda({self.Vb}, {self.E})"
     
+    def print(self, indent=0):
+        print(f'{self.indentationSymbol * indent}{self.value}')
+        self.Vb.print(indent + 1)
+        self.E.print(indent + 1)
+    
 class GammaNode(ASTNode):
     def __init__(self, N, E):
         super().__init__('gamma', 'gamma')
@@ -44,6 +56,12 @@ class GammaNode(ASTNode):
         # Standardize logic goes here
         return f"Gamma({self.N}, {self.E})"
 
+    def print(self, indent=0):
+        print(f'{self.indentationSymbol * indent}{self.value}')
+        self.N.print(indent + 1)
+        self.E.print(indent + 1)    
+
+
 class RnNode(ASTNode):
     def __init__(self, randType, rand):
         super().__init__(randType, rand)
@@ -51,6 +69,20 @@ class RnNode(ASTNode):
     def standardize(self):
         # Standardize logic goes here
         return f"Rn({self.type}, {self.value})"
+    
+    def print(self, indent=0):
+        tag = ""
+        match self.type:
+            case 'integer':
+                tag = f"<INT:{self.value}>"
+            case 'string':
+                tag = f"<STR:{self.value}>"
+            case 'identifier':
+                tag = f"<ID:{self.value}>"
+            case _:
+                tag = f"<{self.value}>"
+        print(f'{self.indentationSymbol * indent}{tag}')
+
     
 class LetNode(ASTNode):
     def __init__(self, Def, Exp):
@@ -62,6 +94,11 @@ class LetNode(ASTNode):
         # Standardize logic goes here
         return f"Let({self.D}, {self.E})"
     
+    def print(self, indent=0):
+        print(f'{self.indentationSymbol * indent}{self.value}')
+        self.D.print(indent + 1)
+        self.E.print(indent + 1)
+    
 class CommaNode(ASTNode):
     def __init__(self, params):
         super().__init__('comma', ',')
@@ -71,6 +108,11 @@ class CommaNode(ASTNode):
         # Standardize logic goes here
         return f"Comma({self.params})"
     
+    def print(self, indent=0):
+        print(f'{self.indentationSymbol * indent}{self.value}')
+        for param in self.params:
+            param.print(indent + 1)
+    
 class VbNode(ASTNode):
     def __init__(self, name):
         super().__init__('Vb', name)
@@ -78,6 +120,9 @@ class VbNode(ASTNode):
     def standardize(self):
         # Standardize logic goes here
         return f"Vb({self.value})"
+    
+    def print(self, indent=0):
+        print(f'{self.indentationSymbol * indent}<ID:{self.value}>')
     
 class AssignmentNode(ASTNode):
     def __init__(self, v1, Exp):
@@ -88,6 +133,11 @@ class AssignmentNode(ASTNode):
     def standardize(self):
         # Standardize logic goes here
         return f"Assignment({self.v1}, {self.e})"
+    
+    def print(self, indent=0):
+        print(f'{self.indentationSymbol * indent}{self.value}')
+        self.v1.print(indent + 1)
+        self.e.print(indent + 1)
     
 class FcnFormNode(ASTNode):
     def __init__(self, name, Vbs, Exp):
@@ -100,6 +150,13 @@ class FcnFormNode(ASTNode):
         # Standardize logic goes here
         return f"FcnForm({self.Vbs}, {self.E})"
     
+    def print(self, indent=0):
+        print(f'{self.indentationSymbol * indent}{self.value}')
+        print(f'{self.indentationSymbol * (indent+1)}<ID:{self.name}>')
+        for vb in self.Vbs:
+            vb.print(indent + 1)
+        self.E.print(indent + 1)
+    
 class RecNode(ASTNode):
     def __init__(self, Db):
         super().__init__('rec', 'rec')
@@ -109,6 +166,10 @@ class RecNode(ASTNode):
         # Standardize logic goes here
         return f"Rec({self.Db})"
     
+    def print(self, indent=0):
+        print(f'{self.indentationSymbol * indent}{self.value}')
+        self.Db.print(indent + 1)
+    
 class AndNode(ASTNode):
     def __init__(self, Drs):
         super().__init__('and', 'and')
@@ -117,16 +178,26 @@ class AndNode(ASTNode):
     def standardize(self):
         # Standardize logic goes here
         return f"And({self.Drs})"
+    
+    def print(self, indent=0):
+        print(f'{self.indentationSymbol * indent}{self.value}')
+        for dr in self.Drs:
+            dr.print(indent + 1)
 
 class WithinNode(ASTNode):
-    def __init__(self, Db, D):
+    def __init__(self, Da, D):
         super().__init__('within', 'within')
-        self.Db = Db
+        self.Da = Da
         self.D = D
 
     def standardize(self):
         # Standardize logic goes here
-        return f"Within({self.Db}, {self.D})"    
+        return f"Within({self.Da}, {self.D})"
+
+    def print(self, indent=0):
+        print(f'{self.indentationSymbol * indent}{self.value}')
+        self.Da.print(indent + 1)
+        self.D.print(indent + 1)   
     
 class WhereNode(ASTNode):
     def __init__(self, T, Dr):
@@ -138,6 +209,11 @@ class WhereNode(ASTNode):
         # Standardize logic goes here
         return f"Where({self.T}, {self.Dr})"
     
+    def print(self, indent=0):
+        print(f'{self.indentationSymbol * indent}{self.value}')
+        self.T.print(indent + 1)
+        self.Dr.print(indent + 1)
+    
 class TauNode(ASTNode):
     def __init__(self, elements):
         super().__init__('tau', 'tau')
@@ -146,6 +222,11 @@ class TauNode(ASTNode):
     def standardize(self):
         # Standardize logic goes here
         return f"Tau({self.elements})"
+    
+    def print(self, indent=0):
+        print(f'{self.indentationSymbol * indent}{self.value}')
+        for element in self.elements:
+            element.print(indent + 1)
     
 class AugNode(ASTNode):
     def __init__(self, Ta, Tc):
@@ -156,6 +237,11 @@ class AugNode(ASTNode):
     def standardize(self):
         # Standardize logic goes here
         return f"Aug({self.Ta}, {self.Tc})"
+    
+    def print(self, indent=0):
+        print(f'{self.indentationSymbol * indent}{self.value}')
+        self.Ta.print(indent + 1)
+        self.Tc.print(indent + 1)
     
 class ArrowNode(ASTNode):
     def __init__(self, condition, ifCase, elseCase):
@@ -168,6 +254,12 @@ class ArrowNode(ASTNode):
         # Standardize logic goes here
         return f"Arrow({self.condition}, {self.ifCase}, {self.elseCase})"
     
+    def print(self, indent=0):
+        print(f'{self.indentationSymbol * indent}{self.value}')
+        self.condition.print(indent + 1)
+        self.ifCase.print(indent + 1)
+        self.elseCase.print(indent + 1)
+    
 class NotNode(ASTNode):
     def __init__(self, Bp):
         super().__init__('not', 'not')
@@ -176,6 +268,10 @@ class NotNode(ASTNode):
     def standardize(self):
         # Standardize logic goes here
         return f"Not({self.Bp})"
+    
+    def print(self, indent=0):
+        print(f'{self.indentationSymbol * indent}{self.value}')
+        self.Bp.print(indent + 1)
     
 class BAndOrNode(ASTNode):
     def __init__(self, B1, B2, operator):
@@ -187,6 +283,11 @@ class BAndOrNode(ASTNode):
         # Standardize logic goes here
         return f"{self.value}({self.B1}, {self.B2})"
     
+    def print(self, indent=0):
+        print(f'{self.indentationSymbol * indent}{self.value}')
+        self.B1.print(indent + 1)
+        self.B2.print(indent + 1)
+    
 class ConditionNode(ASTNode):
     def __init__(self, a1, a2, condition):
         super().__init__('condition', condition)
@@ -196,6 +297,11 @@ class ConditionNode(ASTNode):
     def standardize(self):
         # Standardize logic goes here
         return f"{self.value}({self.a1}, {self.a2})"
+    
+    def print(self, indent=0):
+        print(f'{self.indentationSymbol * indent}{self.value}')
+        self.a1.print(indent + 1)
+        self.a2.print(indent + 1)
     
 class ArithmeticNode(ASTNode):
     def __init__(self, operator, a1, a2):
@@ -207,6 +313,11 @@ class ArithmeticNode(ASTNode):
         # Standardize logic goes here
         return f"{self.value}({self.a1}, {self.a2})"
     
+    def print(self, indent=0):
+        print(f'{self.indentationSymbol * indent}{self.value}')
+        self.a1.print(indent + 1)
+        self.a2.print(indent + 1)
+    
 class NegNode(ASTNode):
     def __init__(self, a):
         super().__init__('neg', 'neg')
@@ -215,6 +326,10 @@ class NegNode(ASTNode):
     def standardize(self):
         # Standardize logic goes here
         return f"Neg({self.a})"
+    
+    def print(self, indent=0):
+        print(f'{self.indentationSymbol * indent}{self.value}')
+        self.a.print(indent + 1)
     
 class AtNode(ASTNode):
     def __init__(self, a1, Id, a2):
@@ -226,3 +341,9 @@ class AtNode(ASTNode):
     def standardize(self):
         # Standardize logic goes here
         return f"@({self.a1}, {self.Id}, {self.a2})"
+    
+    def print(self, indent=0):
+        print(f'{self.indentationSymbol * indent}{self.value}')
+        self.a1.print(indent + 1)
+        print(f'{self.indentationSymbol * (indent + 1)}<ID:{self.Id}>')
+        self.a2.print(indent + 1)
