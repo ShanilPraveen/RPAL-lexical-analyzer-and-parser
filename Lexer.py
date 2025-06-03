@@ -18,7 +18,7 @@ class Lexer:
         self.code = code
         self.tokens = []
         self.keywords = {
-            'let', 'in', 'where', 'within', 'and',
+            'let', 'in', 'where', 'within', 'and', 'nil',
             'rec', 'function', 'lambda', 'true', 'false'
         }
 
