@@ -203,7 +203,7 @@ class FcnFormNode(Node):
     
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
-        print(f'{self.indentationSymbol * (indent+1)}<ID:{self.name}>')
+        self.name.print(indent + 1)
         for vb in self.Vbs:
             vb.print(indent + 1)
         self.E.print(indent + 1)
@@ -483,5 +483,5 @@ class AtNode(Node):
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
         self.a1.print(indent + 1)
-        print(f'{self.indentationSymbol * (indent + 1)}<ID:{self.Id}>')
+        self.Id.print(indent + 1)
         self.a2.print(indent + 1)

@@ -357,11 +357,11 @@ class Parser:
         elif len(operands) == 1:
             return operands[0]
         else:
-            node = operands[-1] 
-            for i in range(len(operands)-2, -1, -1):
+            node = operands[0] 
+            for i in range(1,len(operands)):
                 Rn = operands[i]
                 # Create a GammaNode for each operand
-                node = GammaNode(Rn, node)
+                node = GammaNode(node, Rn)
             return node
         
     def parse_Rn(self):
