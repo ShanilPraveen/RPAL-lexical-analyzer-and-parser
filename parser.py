@@ -1,7 +1,9 @@
 from .tree import build_tree
 from .Lexer import Token
 from .ast_nodes import (LetNode, LambdaNode, RnNode, FcnFormNode, RecNode,
-GammaNode, CommaNode, VbNode, AssignmentNode, AndNode, WithinNode, WhereNode)
+GammaNode, CommaNode, VbNode, AssignmentNode, AndNode, WithinNode, WhereNode,
+TauNode, AugNode, ArrowNode, NotNode, BAndOrNode, ConditionNode, ArithmeticNode,
+NegNode, AtNode)
 
 
 class Parser:
@@ -64,8 +66,11 @@ class Parser:
 
             self.expect('.')
             e = self.parse_E()
-            return LambdaNode(vb_list,e)
-
+            for i in range(len(vb_list)-1, -1, -1):
+                vb = vb_list[i]
+                # Create a LambdaNode for each variable binding
+                e = LambdaNode(vb, e)
+            return e
 
         else:
             return self.parse_Ew()
@@ -109,6 +114,10 @@ class Parser:
                 e = self.parse_E()
                 self.expect('delimiter')
                 return e
+            else:
+                raise SyntaxError(f"Unexpected token: {token}")
+        else:
+            raise SyntaxError("Unexpected end of input while parsing RnNode")
 
 
     def parse_T(self):
@@ -141,6 +150,8 @@ class Parser:
             else:
                 break
 
+        return node
+
         if not operands:
             raise SyntaxError("Expected at least one operand")
         elif len(operands) == 1:
@@ -151,13 +162,33 @@ class Parser:
                 # Create a GammaNode for each operand
                 node = GammaNode(node, Rn)
             return node
-    
+
+    def parse_R(self):
+        operands = []
+        while True:
+            try:
+                Rn = self.parse_Rn()
+                operands.append(Rn)
+            except SyntaxError:
+                # If we can't parse another Rn, break the loop
+                break
+        if not operands:
+            raise SyntaxError("Expected at least one operand")
+        elif len(operands) == 1:
+            return operands[0]
+        else:
+            for i in range(len(operands)-1, -1, -1):
+                Rn = operands[i]
+                # Create a GammaNode for each operand
+                node = GammaNode(node, Rn)
+            return node
+
     def parse_V1(self):
         params = []
-        params.append(self.expect('identifier')) 
+        params.append(self.match('identifier')) 
         while self.peek() and self.peek().type == 'delimiter' and self.peek().value == ',':
-            self.match('delimiter')
-            params.append(self.expect('identifier'))
+            self.expect('delimiter')
+            params.append(self.match('identifier'))
         
         if len(params)==0:
             raise SyntaxError("Expected at least one identifier in paranthesis")
@@ -165,9 +196,6 @@ class Parser:
             return VbNode(params[0].value)
         else:
             return CommaNode(params)
-
-
-        return node
 
     def parse_Tc(self):
         b = self.parse_B()
@@ -187,7 +215,7 @@ class Parser:
             if self.peek() and self.peek().value == 'or':
                 self.match('or')
                 next_bt = self.parse_Bt()
-                node = OrNode(node,next_bt)
+                node = BAndOrNode(node,next_bt, 'or')
             else:
                 break
 
@@ -200,10 +228,10 @@ class Parser:
             if self.peek() and self.peek().value == '&':
                 self.match('&')
                 next_bs = self.parse_Bs()
-                node = AndNode(node, next_bs)
+                node = BAndOrNode(node, next_bs, '&')
             else:
-
-                raise SyntaxError(f"Unexpected token: {token}")
+                break
+        return node
             
     
     def parse_Db(self):
@@ -228,15 +256,15 @@ class Parser:
                                 break
                         if len(Vbs) == 0:
                             raise SyntaxError("Expected at least one variable binding")
-                        self.expect('operator')
+                        self.expect('=')
                         e = self.parse_E()
                         return FcnFormNode(identifier.value, Vbs, e)
                 else:
                     raise SyntaxError("Unexpected end of input while parsing DbNode")
             elif token.type == 'delimiter' and token.value == '(':
-                self.match('delimiter')
+                self.match('(')
                 d = self.parse_D()
-                self.expect('delimiter')
+                self.expect(')')
                 return d
             else:
                 raise SyntaxError(f"Unexpected token: {token}")
@@ -288,9 +316,6 @@ class Parser:
         else:
             raise SyntaxError("Unexpected end of input while parsing DNode")
 
-                break
-
-        return node
 
     def parse_Bs(self):
         token = self.peek()
@@ -308,32 +333,32 @@ class Parser:
         if token and token.value in ('gr', '>'):
             self.match(token.value)
             a2 = self.parse_A()
-            return GreaterThanNode(a1, a2)
+            return ConditionNode(a1, a2, '>')
 
         elif token and token.value in ('ge', '>='):
             self.match(token.value)
             a2 = self.parse_A()
-            return GreaterThanOrEqualNode(a1, a2)
+            return ConditionNode(a1, a2, '>=')
 
         elif token and token.value in ('ls', '<'):
             self.match(token.value)
             a2 = self.parse_A()
-            return LessThanNode(a1, a2)
+            return ConditionNode(a1, a2, '<')
 
         elif token and token.value in ('le', '<='):
             self.match(token.value)
             a2 = self.parse_A()
-            return LessThanOrEqualNode(a1, a2)
+            return ConditionNode(a1, a2, '<=')
 
         elif token and token.value == 'eq':
             self.match('eq')
             a2 = self.parse_A()
-            return EqualNode(a1, a2)
+            return ConditionNode(a1, a2, 'eq')
 
         elif token and token.value == 'ne':
             self.match('ne')
             a2 = self.parse_A()
-            return NotEqualNode(a1, a2)
+            return ConditionNode(a1, a2, 'ne')
 
         return a1
 
@@ -348,7 +373,7 @@ class Parser:
         elif token and token.value == '-':
             self.match('-')
             at = self.parse_At()
-            return ArithmeticNode('neg', None, at)
+            return NegNode(at)
 
         node = self.parse_At()
         while True:
@@ -406,9 +431,8 @@ class Parser:
                     raise SyntaxError("Expected identifier after '@'")
 
                 r = self.parse_R()
-                id_node = IDNode(id_token.value)
 
-                node = ArithmeticNode('@', node, [id_node, r])
+                node = AtNode(node, id_token.value, r)
 
             else:
                 break
