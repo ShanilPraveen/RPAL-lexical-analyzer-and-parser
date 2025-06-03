@@ -127,3 +127,102 @@ class WithinNode(ASTNode):
     def standardize(self):
         # Standardize logic goes here
         return f"Within({self.Db}, {self.D})"    
+    
+class WhereNode(ASTNode):
+    def __init__(self, T, Dr):
+        super().__init__('Ew', 'where')
+        self.T = T
+        self.Dr = Dr
+    
+    def standardize(self):
+        # Standardize logic goes here
+        return f"Where({self.T}, {self.Dr})"
+    
+class TauNode(ASTNode):
+    def __init__(self, elements):
+        super().__init__('tau', 'tau')
+        self.elements = elements
+
+    def standardize(self):
+        # Standardize logic goes here
+        return f"Tau({self.elements})"
+    
+class AugNode(ASTNode):
+    def __init__(self, Ta, Tc):
+        super().__init__('aug', 'aug')
+        self.Ta = Ta
+        self.Tc = Tc
+    
+    def standardize(self):
+        # Standardize logic goes here
+        return f"Aug({self.Ta}, {self.Tc})"
+    
+class ArrowNode(ASTNode):
+    def __init__(self, condition, ifCase, elseCase):
+        super().__init__('arrow', '->')
+        self.condition = condition
+        self.ifCase = ifCase
+        self.elseCase = elseCase
+
+    def standardize(self):
+        # Standardize logic goes here
+        return f"Arrow({self.condition}, {self.ifCase}, {self.elseCase})"
+    
+class NotNode(ASTNode):
+    def __init__(self, Bp):
+        super().__init__('not', 'not')
+        self.Bp = Bp
+    
+    def standardize(self):
+        # Standardize logic goes here
+        return f"Not({self.Bp})"
+    
+class BAndOrNode(ASTNode):
+    def __init__(self, B1, B2, operator):
+        super().__init__('Boolean', operator)
+        self.B1 = B1
+        self.B2 = B2
+    
+    def standardize(self):
+        # Standardize logic goes here
+        return f"{self.value}({self.B1}, {self.B2})"
+    
+class ConditionNode(ASTNode):
+    def __init__(self, a1, a2, condition):
+        super().__init__('condition', condition)
+        self.a1 = a1
+        self.a2 = a2
+
+    def standardize(self):
+        # Standardize logic goes here
+        return f"{self.value}({self.a1}, {self.a2})"
+    
+class ArithmeticNode(ASTNode):
+    def __init__(self, operator, a1, a2):
+        super().__init__('arithmetic', operator)
+        self.a1 = a1
+        self.a2 = a2
+
+    def standardize(self):
+        # Standardize logic goes here
+        return f"{self.value}({self.a1}, {self.a2})"
+    
+class NegNode(ASTNode):
+    def __init__(self, a):
+        super().__init__('neg', 'neg')
+        self.a = a
+    
+    def standardize(self):
+        # Standardize logic goes here
+        return f"Neg({self.a})"
+    
+class AtNode(ASTNode):
+    def __init__(self, a1, Id, a2):
+        super().__init__('at', '@')
+        self.a1 = a1
+        self.Id = Id
+        self.a2 = a2
+    
+    def standardize(self):
+        # Standardize logic goes here
+        return f"@({self.a1}, {self.Id}, {self.a2})"
