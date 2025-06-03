@@ -32,18 +32,19 @@ class ASTNode(ABC):
 
     
 class LambdaNode(ASTNode):
-    def __init__(self, Vb, Exp):
+    def __init__(self, Vbs, Exp):
         super().__init__('E', 'lambda')
-        self.Vb = Vb
+        self.Vb_list = Vbs
         self.E = Exp
     
     def standardize(self):
         # Standardize logic goes here
-        return f"Lambda({self.Vb}, {self.E})"
+        return f"Lambda({self.Vb_list}, {self.E})"
     
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
-        self.Vb.print(indent + 1)
+        for vb in self.Vb_list:
+            vb.print(indent + 1)
         self.E.print(indent + 1)
     
 class GammaNode(ASTNode):

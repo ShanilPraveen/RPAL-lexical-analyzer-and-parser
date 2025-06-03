@@ -66,11 +66,13 @@ class Parser:
 
             self.expect('.')
             e = self.parse_E()
-            for i in range(len(vb_list)-1, -1, -1):
-                vb = vb_list[i]
-                # Create a LambdaNode for each variable binding
-                e = LambdaNode(vb, e)
-            return e
+
+            # for i in range(len(vb_list)-1, -1, -1):
+            #     vb = vb_list[i]
+            #     # Create a LambdaNode for each variable binding
+            #     e = LambdaNode(vb, e)
+            node = LambdaNode(vb_list, e)
+            return node
 
         else:
             return self.parse_Ew()
