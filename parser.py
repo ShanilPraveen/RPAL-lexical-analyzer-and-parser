@@ -373,7 +373,7 @@ class Parser:
             -> 'false'  => 'false'
             -> 'nil'    => 'nil'
             -> '(' E ')'
-            -> 'dummy'  => 'dummy' ; - hasn't implemented
+            -> 'dummy'  => 'dummy' ;
         """
         token =self.peek()
         if token:
@@ -400,6 +400,9 @@ class Parser:
                 e = self.parse_E()
                 self.expect(')')
                 return e
+            elif token.type == 'dummy':
+                self.match('dummy')
+                return RnNode('dummy', token.value) #can pass dummy
             else:
                 raise SyntaxError(f"Unexpected token: {token}")
         else:

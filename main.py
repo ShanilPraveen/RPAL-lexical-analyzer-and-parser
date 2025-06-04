@@ -1,6 +1,7 @@
 import sys
 from Lexer import Lexer
 from parser import Parser
+from environment import Environment, BuiltInFunction
 
 def read_file(filename):
     with open(filename,'r') as f:
@@ -15,18 +16,34 @@ def main():
     # filename = sys.argv[1]
     # show_ast_only = "-ast" in sys.argv
 
-    code = """let rec f(a)= a eq 1 -> 1 
-		      | a le 0 -> 0
-		      | f(a-1) + f(a-2) in Print( f(2))
+    code = """let Add (x,y) = x+y
+ in Print (Add (3,4) )
 """
 
     lexer = Lexer(code)
     lexer.tokenize()
-    print("Tokens: "+str(lexer.tokens))
+    # print("Tokens: "+str(lexer.tokens))
 
     parser = Parser(lexer.tokens)
-    ast = parser.parse_E()
-    ast.standardize().print()
+
+    try:
+        ast = parser.parse_E()
+        # ast.print()
+        st = ast.standardize()
+        st.print()
+        global_env = Environment()
+        global_env.define("Print", BuiltInFunction("Print"))
+
+        print("\n--- Program Output ---")
+        final_result = st.interpret(global_env)
+        print("--- End Program Output ---")
+        print("\nFinal Program Result:", final_result)
+
+    except (SyntaxError, NameError, TypeError, ZeroDivisionError, NotImplementedError, ValueError, RuntimeError) as e:
+        print(f"Error: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
     # ast.print()
 
     # if show_ast_only:

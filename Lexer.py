@@ -18,7 +18,7 @@ class Lexer:
         self.tokens = []
         self.keywords = {
             'let', 'in', 'where', 'within', 'and', 'nil', 'aug',
-            'rec', 'fn', 'lambda', 'true', 'false',
+            'rec', 'fn', 'lambda', 'true', 'false', 'dummy',
         }
 
         self.token_specification = [

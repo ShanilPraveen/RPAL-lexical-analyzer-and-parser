@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
+from environment import Closure, Environment, BuiltInFunction
 
 class Node(ABC):
     indentationSymbol = '.'
+    standardized = False
 
     def __init__(self, type_, value):
         super().__init__()
@@ -33,10 +35,16 @@ class STLambdaNode(Node):
     def standardize(self):
         return self
     
+    def interpret(self, env):
+        return Closure(self, env)  # Return a closure with the current environment
+    
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
         self.Vb.print(indent + 1)
         self.E.print(indent + 1)
+
+    def __str__(self):
+        return f"STLambda({self.Vb}, {self.E})"
 
 
 class IdentifierNode(Node):
@@ -46,6 +54,9 @@ class IdentifierNode(Node):
     def standardize(self):
         return self  # Return the node itself, as IdentifierNode is already standardized
     
+    def interpret(self, env):
+        return env.lookup(self.value)  # Look up the identifier in the environment
+
     def __str__(self):
         return f"Identifier({self.value})"
     
@@ -67,6 +78,9 @@ class LambdaNode(Node):
             stE = node
         return stE  # Return the standardized lambda node
     
+    def interpret(self, env):
+        return self.standardize().interpret(env)  # Interpret the standardized lambda node in the current environment
+    
     def __str__(self):
         return f"Lambda({self.Vb_list}, {self.E})"
     
@@ -86,7 +100,41 @@ class GammaNode(Node):
     def standardize(self):
         stN = self.N.standardize()
         stE = self.E.standardize()
-        return GammaNode(stN, stE) 
+        return GammaNode(stN, stE)
+
+    def interpret(self, env):
+        # print(f"Interpreting GammaNode with N: {self.N} and E: {self.E} in environment: {env}")
+        rator = self.N.interpret(env)  # Interpret the N node in the current environment
+        rand = self.E.interpret(env)  # Interpret the E node in the current environment
+        # print(f"Rator: {rator}, Rand: {rand}")
+
+        if isinstance(rator, Closure):
+            newEnv = Environment(parent=rator.env)
+            param_node = rator.lambdaNode.Vb
+
+            if isinstance(param_node, IdentifierNode):
+                newEnv.define(param_node.value, rand)
+            elif isinstance(param_node, CommaNode):
+                for i, param in enumerate(param_node.params):
+                    if isinstance(param, IdentifierNode):
+                        newEnv.define(param.value, rand.elements[i])
+                    elif isinstance(param, RnNode) and param.value == 'dummy':
+                        pass
+                    else:
+                        raise NotImplementedError("Invalid parameter type in CommaNode")
+            else:
+                if isinstance(param_node, RnNode) and param_node.value == 'dummy':
+                    pass
+                else:
+                    raise TypeError(f"Unsupported parameter definition type: {type(param_node).__name__}")
+            return rator.lambdaNode.E.interpret(newEnv)
+
+        elif isinstance(rator, BuiltInFunction):
+            return rator.execute(rand)  # Execute the built-in function with the argument
+        else:
+            raise TypeError(f"Attempted to apply a non-function value: {rator} of type {type(rator)}")
+            
+
     
     def __str__(self):
         return f"Gamma({self.N}, {self.E})"
@@ -106,6 +154,24 @@ class RnNode(Node):
     
     def __str__(self):
         return f"Rn({self.type}, {self.value})"
+    
+    def interpret(self, env):
+        if self.type == 'integer':
+            return int(self.value)
+        elif self.type == 'string':
+            return str(self.value)
+        elif self.type == 'identifier':
+            return env.lookup(self.value)
+        elif self.type == 'nil':
+            return None
+        elif self.type == 'dummy':
+            return 'dummy'
+        elif self.type == 'true':
+            return True
+        elif self.type == 'false':
+            return False
+        else:
+            raise ValueError(f"Unknown RnNode type encountered during interpretation: {self.type}")
     
     def print(self, indent=0):
         tag = ""
@@ -139,6 +205,9 @@ class LetNode(Node):
     def __str__(self):
         return f"Let({self.D}, {self.E})"
     
+    def interpret(self, env):
+        return self.standardize().interpret(env)  # Interpret the standardized let node in the current environment
+    
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
         self.D.print(indent + 1)
@@ -156,6 +225,10 @@ class CommaNode(Node):
     
     def __str__(self):
         return f"Comma({self.params})"
+    
+    def interpret(self, env):
+        elements = [param.interpret(env) for param in self.params]
+        return tuple(elements)  # Interpret each parameter and return a tuple of results
     
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
@@ -176,6 +249,9 @@ class AssignmentNode(Node):
     
     def __str__(self):
         return f"Assignment({self.v1}, {self.e})"
+    
+    def interpret(self, env):
+        raise RuntimeError("AssignmentNode should not be evaluated directly.")
     
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
@@ -201,6 +277,9 @@ class FcnFormNode(Node):
     def __str__(self):
         return f"FcnForm({self.Vbs}, {self.E})"
     
+    def interpret(self, env):
+        return self.standardize().interpret(env)  # Interpret the standardized function form in the current environment
+    
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
         self.name.print(indent + 1)
@@ -225,6 +304,9 @@ class RecNode(Node):
     
     def __str__(self):
         return f"Rec({self.Db})"
+    
+    def interpret(self, env):
+        return self.standardize().interpret(env)  # Interpret the standardized recursive definition in the current environment
     
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
@@ -254,6 +336,9 @@ class AndNode(Node):
     def __str__(self):
         return f"And({self.Drs})"
     
+    def interpret(self, env):
+        return self.standardize().interpret(env)  # Interpret the standardized and node in the current environment
+    
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
         for dr in self.Drs:
@@ -278,6 +363,9 @@ class WithinNode(Node):
 
     def __str__(self):
         return f"Within({self.Da}, {self.D})"
+    
+    def interpret(self, env):
+        return self.standardize().interpret(env)  # Interpret the standardized within node in the current environment
 
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
@@ -303,6 +391,9 @@ class WhereNode(Node):
     def __str__(self):
         return f"Where({self.T}, {self.Dr})"
     
+    def interpret(self, env):   
+        return self.standardize().interpret(env)
+    
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
         self.T.print(indent + 1)
@@ -320,6 +411,10 @@ class TauNode(Node):
     
     def __str__(self):
         return f"Tau({self.elements})"
+    
+    def interpret(self, env):
+        interpreted_elements = [element.interpret(env) for element in self.elements]
+        return tuple(interpreted_elements)
     
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
@@ -341,6 +436,14 @@ class AugNode(Node):
     def __str__(self):
         return f"Aug({self.Ta}, {self.Tc})"
     
+    def interpret(self, env):
+        ipTa = self.Ta.interpret(env)
+        ipTc = self.Tc.interpret(env)
+        if isinstance(ipTa, tuple) and isinstance(ipTc, tuple):
+            return ipTa + ipTc
+        else:
+            raise TypeError("AugNode expects both Ta and Tc to be tuples.")
+ 
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
         self.Ta.print(indent + 1)
@@ -363,6 +466,13 @@ class ArrowNode(Node):
     def __str__(self):
         return f"Arrow({self.condition}, {self.ifCase}, {self.elseCase})"
     
+    def interpret(self, env):
+        ipCondition = self.condition.interpret(env)
+        if ipCondition:
+            return self.ifCase.interpret(env)
+        else:
+            return self.elseCase.interpret(env)
+    
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
         self.condition.print(indent + 1)
@@ -382,6 +492,13 @@ class NotNode(Node):
     def __str__(self):
         return f"Not({self.Bp})"
     
+    def interpret(self, env):
+        ipBp = self.Bp.interpret(env)
+        if isinstance(ipBp, bool):
+            return not ipBp
+        else:
+            raise TypeError(f"Expected a boolean value for NotNode, got {type(ipBp).__name__}")
+    
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
         self.Bp.print(indent + 1)
@@ -400,6 +517,20 @@ class BAndOrNode(Node):
     
     def __str__(self):
         return f"{self.value}({self.B1}, {self.B2})"
+    
+    def interpret(self, env):
+        if self.value == '&': # RPAL 'and'
+            left_val = self.B1.interpret(env)
+            if not left_val:
+                return False # Short-circuit
+            return self.B2.interpret(env)
+        elif self.value == 'or':
+            left_val = self.B1.interpret(env)
+            if left_val:
+                return True # Short-circuit
+            return self.B2.interpret(env)
+        else:
+            raise ValueError(f"Unknown boolean operator: {self.value}")
     
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
@@ -421,6 +552,20 @@ class ConditionNode(Node):
     def __str__(self):
         return f"{self.value}({self.a1}, {self.a2})"
     
+    def interpret(self, env):
+        ipA1 = self.a1.interpret(env)
+        ipA2 = self.a2.interpret(env)
+        if isinstance(ipA1, bool):
+            if self.value == 'eq': return ipA1 == ipA2
+            if self.value == 'ne': return ipA1 != ipA2
+            if self.value == '>': return ipA1 > ipA2
+            if self.value == '>=': return ipA1 >= ipA2
+            if self.value == '<': return ipA1 < ipA2
+            if self.value == '<=': return ipA1 <= ipA2
+            raise ValueError(f"Unknown comparison operator: {self.value}")
+        else:
+            raise TypeError(f"Expected a boolean value for ConditionNode, got {type(ipA1).__name__}")
+    
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
         self.a1.print(indent + 1)
@@ -441,6 +586,28 @@ class ArithmeticNode(Node):
     def __str__(self):
         return f"{self.value}({self.a1}, {self.a2})"
     
+    def interpret(self, env):
+        ipA1 = self.a1.interpret(env)
+        ipA2 = self.a2.interpret(env)
+        
+        if isinstance(ipA1, int) and isinstance(ipA2, int):
+            if self.value == '+':
+                return ipA1 + ipA2
+            elif self.value == '-':
+                return ipA1 - ipA2
+            elif self.value == '*':
+                return ipA1 * ipA2
+            elif self.value == '/':
+                if ipA2 == 0:
+                    raise ZeroDivisionError("Division by zero is not allowed.")
+                return ipA1 // ipA2
+            elif self.value == '**':
+                return ipA1 ** ipA2
+            else:
+                raise ValueError(f"Unknown arithmetic operator: {self.value}")
+        else:
+            raise TypeError(f"Expected numeric values for ArithmeticNode, got {type(ipA1).__name__} and {type(ipA2).__name__}")
+    
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
         self.a1.print(indent + 1)
@@ -458,6 +625,13 @@ class NegNode(Node):
     
     def __str__(self):
         return f"Neg({self.a})"
+    
+    def interpret(self, env):
+        ipA = self.a.interpret(env)
+        if isinstance(ipA, int):
+            return -ipA
+        else:
+            raise TypeError(f"Expected an integer value for NegNode, got {type(ipA).__name__}")
     
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
@@ -479,6 +653,9 @@ class AtNode(Node):
     
     def __str__(self):
         return f"@({self.a1}, {self.Id}, {self.a2})"
+    
+    def interpret(self, env):
+        self.standardize().interpret(env)
     
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
