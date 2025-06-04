@@ -16,8 +16,8 @@ def main():
     # filename = sys.argv[1]
     # show_ast_only = "-ast" in sys.argv
 
-    code = """let Add (x,y) = x+y
- in Print (Add (3,4) )
+    code = """let f x y z t = x + y + z + t
+in Print (( 3 @f 4) 5 6 )
 """
 
     lexer = Lexer(code)
@@ -39,10 +39,11 @@ def main():
         print("--- End Program Output ---")
         print("\nFinal Program Result:", final_result)
 
-    except (SyntaxError, NameError, TypeError, ZeroDivisionError, NotImplementedError, ValueError, RuntimeError) as e:
+    except (SyntaxError, NameError, TypeError, ZeroDivisionError, NotImplementedError, ValueError, RuntimeError, IndexError) as e:
         print(f"Error: {e}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+        e.print_exc()
 
     # ast.print()
 

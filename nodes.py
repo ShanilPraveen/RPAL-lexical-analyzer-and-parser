@@ -115,9 +115,11 @@ class GammaNode(Node):
             if isinstance(param_node, IdentifierNode):
                 newEnv.define(param_node.value, rand)
             elif isinstance(param_node, CommaNode):
+                if not isinstance(rand, tuple) or len(rand) != len(param_node.params):
+                    raise TypeError(f"Tuple parameter mismatch. Expected {len(param_node.params)} arguments, but received {len(rand)}.")
                 for i, param in enumerate(param_node.params):
                     if isinstance(param, IdentifierNode):
-                        newEnv.define(param.value, rand.elements[i])
+                        newEnv.define(param.value, rand[i])
                     elif isinstance(param, RnNode) and param.value == 'dummy':
                         pass
                     else:
@@ -131,6 +133,11 @@ class GammaNode(Node):
 
         elif isinstance(rator, BuiltInFunction):
             return rator.execute(rand)  # Execute the built-in function with the argument
+        elif isinstance(rator, tuple) and isinstance(rand, int):
+            if len(rator)>=rand and rand>0:
+                return rator[rand-1]
+            else:
+                raise IndexError(f"Index {rand} out of range for tuple {rator} with length {len(rator)}.")
         else:
             raise TypeError(f"Attempted to apply a non-function value: {rator} of type {type(rator)}")
             
@@ -159,7 +166,7 @@ class RnNode(Node):
         if self.type == 'integer':
             return int(self.value)
         elif self.type == 'string':
-            return str(self.value)
+            return str(self.value.strip('"\''))  # Remove quotes from string value
         elif self.type == 'identifier':
             return env.lookup(self.value)
         elif self.type == 'nil':
@@ -441,8 +448,30 @@ class AugNode(Node):
         ipTc = self.Tc.interpret(env)
         if isinstance(ipTa, tuple) and isinstance(ipTc, tuple):
             return ipTa + ipTc
+        elif isinstance(ipTa, tuple) and isinstance(ipTc, (int, str, bool)):
+            return ipTa + tuple([ipTc])
+        elif isinstance(ipTa, (int, str, bool)) and isinstance(ipTc, tuple):
+            return tuple([ipTa]) + ipTc
+        elif ipTa==None and ipTc==None:
+            return None
+        elif ipTa==None:
+            if isinstance(ipTc, tuple):
+                return ipTc
+            elif isinstance(ipTc, (int, str, bool)):
+                return (ipTc,)
+            else:
+                raise TypeError("AugNode expects at least one operand to be a tuple or nil.")
+            
+        elif ipTc==None:
+            if isinstance(ipTa, tuple):
+                return ipTa
+            elif isinstance(ipTa, (int, str, bool)):
+                return (ipTa,)
+            else:
+                raise TypeError("AugNode expects at least one operand to be a tuple or nil.")
+        
         else:
-            raise TypeError("AugNode expects both Ta and Tc to be tuples.")
+            raise TypeError("AugNode expects at least one opernad to be a tuple or nil.")
  
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
@@ -555,7 +584,7 @@ class ConditionNode(Node):
     def interpret(self, env):
         ipA1 = self.a1.interpret(env)
         ipA2 = self.a2.interpret(env)
-        if isinstance(ipA1, bool):
+        if isinstance(ipA1, (int, str)):
             if self.value == 'eq': return ipA1 == ipA2
             if self.value == 'ne': return ipA1 != ipA2
             if self.value == '>': return ipA1 > ipA2
