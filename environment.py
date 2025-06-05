@@ -112,11 +112,36 @@ class BuiltInFunction:
                 return True
             else:   
                 return False
-            
+
         elif self.name == 'Y*':
-            raise NotImplementedError("Direct call to Y* built-in is not supported. It's used for recursion standardization.")
+            from nodes import IdentifierNode # Local import to resolve circular dependency
+            if not isinstance(arg_value, Closure):
+                raise TypeError("Y* combinator expects a function (closure) as its argument.")
+            
+            rec_lambda_node = arg_value.lambdaNode 
+            
+            if not isinstance(rec_lambda_node.Vb, IdentifierNode):
+                raise TypeError("Recursive function name for Y* must be a single identifier.")
+            
+            func_name = rec_lambda_node.Vb.value
+            actual_function_body_node = rec_lambda_node.E
+
+            rec_def_env = arg_value.env
+
+            recursive_call_env = Environment(parent=rec_def_env)
+            recursive_call_env.define(func_name, None)
+            
+            actual_recursive_closure = Closure(actual_function_body_node, recursive_call_env)
+            recursive_call_env.define(func_name, actual_recursive_closure)
+            return actual_recursive_closure
         
-        raise NotImplementedError(f"Built-in function '{self.name}' not yet implemented.")
+        elif self.name == "Order":
+            if isinstance(arg_value, tuple):
+                return len(arg_value)
+            else:
+                raise TypeError("Order function expects a tuple argument.")
+        else:
+            raise NotImplementedError(f"Built-in function '{self.name}' not yet implemented.")
 
 
     def __call__(self, *args):
@@ -128,4 +153,4 @@ class BuiltInFunction:
 
     def __repr__(self):
         return self.__str__()
-    
+     

@@ -16,8 +16,7 @@ def main():
     # filename = sys.argv[1]
     # show_ast_only = "-ast" in sys.argv
 
-    code = """let f x y z t = x + y + z + t
-in Print (( 3 @f 4) 5 6 )
+    code = """let A x = x+1 and B x = x+2 in Print(A, B)
 """
 
     lexer = Lexer(code)
@@ -33,6 +32,8 @@ in Print (( 3 @f 4) 5 6 )
         st.print()
         global_env = Environment()
         global_env.define("Print", BuiltInFunction("Print"))
+        global_env.define("Y*", BuiltInFunction("Y*"))
+        global_env.define("Order", BuiltInFunction("Order"))
 
         print("\n--- Program Output ---")
         final_result = st.interpret(global_env)
@@ -41,6 +42,7 @@ in Print (( 3 @f 4) 5 6 )
 
     except (SyntaxError, NameError, TypeError, ZeroDivisionError, NotImplementedError, ValueError, RuntimeError, IndexError) as e:
         print(f"Error: {e}")
+        e.print_exc()
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         e.print_exc()

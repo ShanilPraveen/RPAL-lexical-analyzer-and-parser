@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from data_types import Tuple, TruthValue, Nil
 from environment import Closure, Environment, BuiltInFunction
 
 class Node(ABC):
@@ -49,7 +50,10 @@ class STLambdaNode(Node):
 
 class IdentifierNode(Node):
     def __init__(self, name):
-        super().__init__('Identifier', name)
+        if name=='()':
+            super().__init__('()', '()')
+        else:
+            super().__init__('Identifier', name)
     
     def standardize(self):
         return self  # Return the node itself, as IdentifierNode is already standardized
@@ -61,7 +65,10 @@ class IdentifierNode(Node):
         return f"Identifier({self.value})"
     
     def print(self, indent=0):
-        print(f'{self.indentationSymbol * indent}<ID:{self.value}>')
+        if self.value == '()':
+            print(f'{self.indentationSymbol * indent}<()>')
+        else:
+            print(f'{self.indentationSymbol * indent}<ID:{self.value}>')
 
 
 class LambdaNode(Node):
@@ -103,43 +110,49 @@ class GammaNode(Node):
         return GammaNode(stN, stE)
 
     def interpret(self, env):
-        # print(f"Interpreting GammaNode with N: {self.N} and E: {self.E} in environment: {env}")
-        rator = self.N.interpret(env)  # Interpret the N node in the current environment
-        rand = self.E.interpret(env)  # Interpret the E node in the current environment
-        # print(f"Rator: {rator}, Rand: {rand}")
+        rator = self.N.interpret(env)
+        rand = self.E.interpret(env)
 
         if isinstance(rator, Closure):
-            newEnv = Environment(parent=rator.env)
-            param_node = rator.lambdaNode.Vb
+            newEnv = Environment(parent=rator.env) # This uses rator.env as per your code
 
+            param_node = rator.lambdaNode.Vb # This uses rator.lambdaNode.Vb as per your code
+            
+            # --- Parameter Binding Logic ---
             if isinstance(param_node, IdentifierNode):
                 newEnv.define(param_node.value, rand)
             elif isinstance(param_node, CommaNode):
-                if not isinstance(rand, tuple) or len(rand) != len(param_node.params):
+                if not isinstance(rand, Tuple) or len(rand) != len(param_node.params):
                     raise TypeError(f"Tuple parameter mismatch. Expected {len(param_node.params)} arguments, but received {len(rand)}.")
                 for i, param in enumerate(param_node.params):
                     if isinstance(param, IdentifierNode):
                         newEnv.define(param.value, rand[i])
-                    elif isinstance(param, RnNode) and param.value == 'dummy':
+                    elif isinstance(param, RnNode) and param.value == 'dummy': # Ensure RnNode is imported
                         pass
                     else:
-                        raise NotImplementedError("Invalid parameter type in CommaNode")
+                        raise NotImplementedError(f"Unsupported parameter type in CommaNode: {type(param).__name__}")
             else:
-                if isinstance(param_node, RnNode) and param_node.value == 'dummy':
+                if isinstance(param_node, RnNode) and param_node.value == 'dummy': # Ensure RnNode is imported
                     pass
                 else:
                     raise TypeError(f"Unsupported parameter definition type: {type(param_node).__name__}")
-            return rator.lambdaNode.E.interpret(newEnv)
+            
+            
+            # --- Interpret the Closure's body ---
+            body_to_interpret = rator.lambdaNode.E # This is the ST node representing the function body
+            return body_to_interpret.interpret(newEnv) # This is the call that should trigger ArrowNode.interpret
 
         elif isinstance(rator, BuiltInFunction):
-            return rator.execute(rand)  # Execute the built-in function with the argument
-        elif isinstance(rator, tuple) and isinstance(rand, int):
+            result = rator.execute(rand)
+            return result
+        elif isinstance(rator, Tuple) and isinstance(rand, int):
             if len(rator)>=rand and rand>0:
-                return rator[rand-1]
+                result = rator[rand-1]
+                return result
             else:
                 raise IndexError(f"Index {rand} out of range for tuple {rator} with length {len(rator)}.")
         else:
-            raise TypeError(f"Attempted to apply a non-function value: {rator} of type {type(rator)}")
+            raise TypeError(f"Attempted to apply a non-function/non-tuple value: {rator} of type {type(rator)}")
             
 
     
@@ -170,13 +183,13 @@ class RnNode(Node):
         elif self.type == 'identifier':
             return env.lookup(self.value)
         elif self.type == 'nil':
-            return None
+            return Nil()  # Return an instance of Nil
         elif self.type == 'dummy':
             return 'dummy'
         elif self.type == 'true':
-            return True
+            return TruthValue(True)
         elif self.type == 'false':
-            return False
+            return TruthValue(False)
         else:
             raise ValueError(f"Unknown RnNode type encountered during interpretation: {self.type}")
     
@@ -258,7 +271,29 @@ class AssignmentNode(Node):
         return f"Assignment({self.v1}, {self.e})"
     
     def interpret(self, env):
-        raise RuntimeError("AssignmentNode should not be evaluated directly.")
+        evaluated_e = self.e.interpret(env)
+        print(f"Interpreting AssignmentNode: {self.v1} = {evaluated_e} in environment: {env}")
+        
+        if isinstance(self.v1, IdentifierNode):
+            env.define(self.v1.value, evaluated_e)
+            return evaluated_e
+        elif isinstance(self.v1, CommaNode):
+            if not isinstance(evaluated_e, Tuple) or len(evaluated_e) != len(self.v1.params):
+                raise TypeError("Tuple assignment mismatch.")
+            for i, vb_node in enumerate(self.v1.params):
+                if isinstance(vb_node, IdentifierNode):
+                    env.define(vb_node.value, evaluated_e[i])
+                elif isinstance(vb_node, RnNode) and vb_node.value == 'dummy':
+                    pass
+                else:
+                    raise NotImplementedError(f"Unsupported parameter type in tuple assignment: {type(vb_node).__name__}")
+            return evaluated_e
+        else:
+            if isinstance(self.v1, RnNode) and self.v1.value == 'dummy':
+                return evaluated_e
+            else:
+                raise TypeError(f"Invalid left-hand side for assignment: {type(self.v1).__name__}")
+
     
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
@@ -303,6 +338,9 @@ class RecNode(Node):
     def standardize(self):
         stDb = self.Db.standardize()
         if isinstance(stDb, AssignmentNode):
+            if not isinstance(stDb.e, STLambdaNode):
+                raise TypeError("Recursive function body must standardize to an STLambdaNode.")
+            
             lambdaNode = STLambdaNode(stDb.v1, stDb.e)
             gammaNode = GammaNode(IdentifierNode('Y*'), lambdaNode)
             return AssignmentNode(stDb.v1, gammaNode)  # Return an AssignmentNode for the recursive definition
@@ -421,7 +459,7 @@ class TauNode(Node):
     
     def interpret(self, env):
         interpreted_elements = [element.interpret(env) for element in self.elements]
-        return tuple(interpreted_elements)
+        return Tuple(interpreted_elements)
     
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
@@ -446,32 +484,18 @@ class AugNode(Node):
     def interpret(self, env):
         ipTa = self.Ta.interpret(env)
         ipTc = self.Tc.interpret(env)
-        if isinstance(ipTa, tuple) and isinstance(ipTc, tuple):
-            return ipTa + ipTc
-        elif isinstance(ipTa, tuple) and isinstance(ipTc, (int, str, bool)):
-            return ipTa + tuple([ipTc])
-        elif isinstance(ipTa, (int, str, bool)) and isinstance(ipTc, tuple):
-            return tuple([ipTa]) + ipTc
-        elif ipTa==None and ipTc==None:
-            return None
-        elif ipTa==None:
-            if isinstance(ipTc, tuple):
-                return ipTc
-            elif isinstance(ipTc, (int, str, bool)):
-                return (ipTc,)
+        if isinstance(ipTa, Tuple) and isinstance(ipTc, (int, str, TruthValue, Nil, Tuple)):
+            return ipTa.add(ipTc)
+        elif isinstance(ipTa, (int, str, TruthValue)) and isinstance(ipTc, Tuple):
+            return Tuple([ipTa]).add(ipTc)
+        elif isinstance(ipTa, Nil):
+            if isinstance(ipTc, (int, str, TruthValue, Nil, Tuple)):
+                return Tuple([ipTc])
             else:
-                raise TypeError("AugNode expects at least one operand to be a tuple or nil.")
-            
-        elif ipTc==None:
-            if isinstance(ipTa, tuple):
-                return ipTa
-            elif isinstance(ipTa, (int, str, bool)):
-                return (ipTa,)
-            else:
-                raise TypeError("AugNode expects at least one operand to be a tuple or nil.")
+                raise TypeError("aug expects at least one operand to be a tuple or nil.")
         
         else:
-            raise TypeError("AugNode expects at least one opernad to be a tuple or nil.")
+            raise TypeError("aug expects left opernad to be a tuple or nil and right opernad to be a String/ Integer/ Truthvalue/ Function/ nil/ dummy/.")
  
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
@@ -496,11 +520,14 @@ class ArrowNode(Node):
         return f"Arrow({self.condition}, {self.ifCase}, {self.elseCase})"
     
     def interpret(self, env):
-        ipCondition = self.condition.interpret(env)
-        if ipCondition:
-            return self.ifCase.interpret(env)
+        condition_result = self.condition.interpret(env)
+
+        if condition_result.value is True:
+            result = self.ifCase.interpret(env)
+            return result
         else:
-            return self.elseCase.interpret(env)
+            result = self.elseCase.interpret(env)
+            return result
     
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
@@ -523,8 +550,8 @@ class NotNode(Node):
     
     def interpret(self, env):
         ipBp = self.Bp.interpret(env)
-        if isinstance(ipBp, bool):
-            return not ipBp
+        if isinstance(ipBp, TruthValue):
+            return TruthValue(not ipBp)
         else:
             raise TypeError(f"Expected a boolean value for NotNode, got {type(ipBp).__name__}")
     
@@ -551,12 +578,12 @@ class BAndOrNode(Node):
         if self.value == '&': # RPAL 'and'
             left_val = self.B1.interpret(env)
             if not left_val:
-                return False # Short-circuit
+                return left_val # Short-circuit
             return self.B2.interpret(env)
         elif self.value == 'or':
             left_val = self.B1.interpret(env)
             if left_val:
-                return True # Short-circuit
+                return left_val # Short-circuit
             return self.B2.interpret(env)
         else:
             raise ValueError(f"Unknown boolean operator: {self.value}")
@@ -584,16 +611,24 @@ class ConditionNode(Node):
     def interpret(self, env):
         ipA1 = self.a1.interpret(env)
         ipA2 = self.a2.interpret(env)
-        if isinstance(ipA1, (int, str)):
-            if self.value == 'eq': return ipA1 == ipA2
-            if self.value == 'ne': return ipA1 != ipA2
-            if self.value == '>': return ipA1 > ipA2
-            if self.value == '>=': return ipA1 >= ipA2
-            if self.value == '<': return ipA1 < ipA2
-            if self.value == '<=': return ipA1 <= ipA2
+        if isinstance(ipA1, (int, str)) and isinstance(ipA2, (int, str)):
+            if self.value == 'eq': return TruthValue(ipA1 == ipA2)
+            if self.value == 'ne': return TruthValue(ipA1 != ipA2)
+            if self.value == '>': return TruthValue(ipA1 > ipA2)
+            if self.value == '>=': return TruthValue(ipA1 >= ipA2)
+            if self.value == '<': return TruthValue(ipA1 < ipA2)
+            if self.value == '<=': return TruthValue(ipA1 <= ipA2)
             raise ValueError(f"Unknown comparison operator: {self.value}")
+        elif isinstance(ipA1, TruthValue) and isinstance(ipA2, TruthValue):
+            if self.value == 'eq': return TruthValue(ipA1.value == ipA2.value)
+            if self.value == 'ne': return TruthValue(ipA1.value != ipA2.value)
+            raise ValueError(f"Unknown comparison operator for TruthValue: {self.value}")
+        elif isinstance(ipA1, Nil) and isinstance(ipA2, Nil):
+            if self.value == 'eq': return TruthValue(True)
+            if self.value == 'ne': return TruthValue(False)
+            raise ValueError(f"Unknown comparison operator for Nil: {self.value}")
         else:
-            raise TypeError(f"Expected a boolean value for ConditionNode, got {type(ipA1).__name__}")
+            raise TypeError(f"Expected compareble values for ConditionNode, got {type(ipA1).__name__} and {type(ipA2).__name__}")
     
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
