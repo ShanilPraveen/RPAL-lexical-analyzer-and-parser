@@ -9,52 +9,45 @@ def read_file(filename):
 
 
 def main():
-    # if len(sys.argv) < 2 :
-    #     print("Usage: python myrpal.py <filename> [-ast]")
-    #     return
+    if len(sys.argv) < 2 :
+        print("Usage: python myrpal.py [-ast] <filename>")
+        return
 
-    # filename = sys.argv[1]
-    # show_ast_only = "-ast" in sys.argv
 
-    code = """let A = (10, 20, 30) in let B fx = Isfunction fx -> 'A is a function' | 'A is not a function'
-    in Print (B A)
-"""
+    filename = sys.argv[2] if len(sys.argv) > 2 else sys.argv[1]
+    code = read_file(filename)
+    show_ast_only = "-ast" in sys.argv
 
     lexer = Lexer(code)
     lexer.tokenize()
-    # print("Tokens: "+str(lexer.tokens))
+    print("Tokens: "+str(lexer.tokens))
 
     parser = Parser(lexer.tokens)
 
     try:
         ast = parser.parse_E()
-        # ast.print()
-        st = ast.standardize()
-        st.print()
-        global_env = Environment()
-        global_env.defineBuiltInFunctions()
 
-        print("\n--- Program Output ---")
-        final_result = st.interpret(global_env)
-        print("--- End Program Output ---")
-        print("\nFinal Program Result:", final_result)
+        if show_ast_only:
+            print("\n--- AST ---")
+            ast.print()
+
+        else:
+            st = ast.standardize()
+            #st.print()
+            global_env = Environment()
+            global_env.defineBuiltInFunctions()
+            
+            print("Output of the above program is:")
+            final_result = st.interpret(global_env)
+            #print("\nFinal Program Result:", final_result)
+
 
     except (SyntaxError, NameError, TypeError, ZeroDivisionError, NotImplementedError, ValueError, RuntimeError, IndexError) as e:
         print(f"Error: {e}")
-        e.print_exc()
+        #e.print_exc()
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         e.print_exc()
-
-    # ast.print()
-
-    # if show_ast_only:
-    #     ast.print()
-
-    # else:
-    #     print("Output of the above program is:")
-    #     # You’ll later replace this with CSE execution
-    #     print("<placeholder>")
 
 
 if __name__ == "__main__":
