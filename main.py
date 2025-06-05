@@ -16,16 +16,8 @@ def main():
     # filename = sys.argv[1]
     # show_ast_only = "-ast" in sys.argv
 
-    code = """  let Is_perfect_Square N =
- Has_sqrt_ge (N,1)
- where
- rec Has_sqrt_ge (N,R) =
- R**2 gr N -> false
- | R**2 eq N -> true
- | Has_sqrt_ge (N,R+1)
- in Print (Is_perfect_Square 4,
- Is_perfect_Square 64,
- Is_perfect_Square 3)
+    code = """let PrintName () = Print 'Hello, World!' in
+    PrintName dummy 
 """
 
     lexer = Lexer(code)

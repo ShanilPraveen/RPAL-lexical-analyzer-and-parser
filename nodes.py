@@ -49,7 +49,10 @@ class STLambdaNode(Node):
 
 class IdentifierNode(Node):
     def __init__(self, name):
-        super().__init__('Identifier', name)
+        if name=='()':
+            super().__init__('()', '()')
+        else:
+            super().__init__('Identifier', name)
     
     def standardize(self):
         return self  # Return the node itself, as IdentifierNode is already standardized
@@ -61,7 +64,10 @@ class IdentifierNode(Node):
         return f"Identifier({self.value})"
     
     def print(self, indent=0):
-        print(f'{self.indentationSymbol * indent}<ID:{self.value}>')
+        if self.value == '()':
+            print(f'{self.indentationSymbol * indent}<()>')
+        else:
+            print(f'{self.indentationSymbol * indent}<ID:{self.value}>')
 
 
 class LambdaNode(Node):
@@ -132,7 +138,7 @@ class GammaNode(Node):
             
             
             # --- Interpret the Closure's body ---
-            body_to_interpret = rator.lambdaNode.E # This is the AST node representing the function body
+            body_to_interpret = rator.lambdaNode.E # This is the ST node representing the function body
             return body_to_interpret.interpret(newEnv) # This is the call that should trigger ArrowNode.interpret
 
         elif isinstance(rator, BuiltInFunction):

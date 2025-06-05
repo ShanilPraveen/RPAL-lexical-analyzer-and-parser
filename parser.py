@@ -515,7 +515,7 @@ class Parser:
         """
         Vb  -> '<IDENTIFIER>'
             -> '(' Vl ')'
-            -> '(' ')'         => '()' - hasn't implemented
+            -> '(' ')'         => '()'
         """
         token = self.peek()
         if token:
@@ -524,9 +524,13 @@ class Parser:
                 return IdentifierNode(identifier.value)
             elif token.type == 'delimiter' and token.value == '(':
                 self.match('(')
-                v1 = self.parse_V1()
-                self.expect(')')
-                return v1
+                if self.peek() and self.peek().type == 'delimiter' and self.peek().value == ')':
+                    self.match(')')
+                    return IdentifierNode('()')
+                else:
+                    v1 = self.parse_V1()
+                    self.expect(')')
+                    return v1
             else:
                 raise SyntaxError(f"Unexpected token: {token} at {self.position}")
 
