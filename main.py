@@ -16,7 +16,8 @@ def main():
     # filename = sys.argv[1]
     # show_ast_only = "-ast" in sys.argv
 
-    code = """let A x = x+1 and B x = x+2 in Print(A, B)
+    code = """let A = (10, 20, 30) in let B fx = Isfunction fx -> 'A is a function' | 'A is not a function'
+    in Print (B A)
 """
 
     lexer = Lexer(code)
@@ -31,9 +32,7 @@ def main():
         st = ast.standardize()
         st.print()
         global_env = Environment()
-        global_env.define("Print", BuiltInFunction("Print"))
-        global_env.define("Y*", BuiltInFunction("Y*"))
-        global_env.define("Order", BuiltInFunction("Order"))
+        global_env.defineBuiltInFunctions()
 
         print("\n--- Program Output ---")
         final_result = st.interpret(global_env)
