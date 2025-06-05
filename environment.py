@@ -1,3 +1,5 @@
+from data_types import Tuple, TruthValue, Nil
+
 class Environment:
     def __init__(self, parent=None):
         self.parent = parent
@@ -49,48 +51,52 @@ class BuiltInFunction:
         
         elif self.name == "Isinteger":
             if type(arg_value) == int:
-                return True
+                return TruthValue(True)
             else:
-                return False
+                return TruthValue(False)
             
         elif self.name == "Istruthvalue":
-            if isinstance(arg_value, bool):
-                return True
+            if isinstance(arg_value, TruthValue):
+                return TruthValue(True)
             else:
-                return False
+                return TruthValue(False)
             
         elif self.name == "Isstring":
             if type(arg_value) == str:
-                return True
+                return TruthValue(True)
             else:
-                return False
+                return TruthValue(False)
             
         elif self.name == "Istuple":
-            if isinstance(arg_value, tuple):
-                return True
+            if isinstance(arg_value, Tuple):
+                return TruthValue(True)
             else:
-                return False
+                return TruthValue(False)
         
         elif self.name == "Isfunction":
             if isinstance(arg_value, BuiltInFunction) or isinstance(arg_value, Closure):
-                return True
+                return TruthValue(True)
             else:
-                return False
+                return TruthValue(False)
             
         elif self.name == "Isdummy":
             if arg_value == "dummy":
-                return True
+                return TruthValue(True)
             else:
-                return False
+                return TruthValue(False)
             
         elif self.name == "Stem":
             if type(arg_value) == str:
+                if len(arg_value) == 0:
+                    raise ValueError("Stem built-in function expects a non-empty string argument.")
                 return arg_value[0]
             else:
                 raise TypeError("Stem built-in function expects a string argument.")
         
         elif self.name == "Stern":
             if type(arg_value) == str:
+                if len(arg_value) == 0:
+                    raise ValueError("Stern built-in function expects a non-empty string argument.")
                 return arg_value[1:]
             else:
                 raise TypeError("Stern built-in function expects a string argument.")
@@ -102,16 +108,16 @@ class BuiltInFunction:
                 raise TypeError("Conc built-in function expects two string arguments.")
         
         elif self.name == "Order":
-            if isinstance(arg_value,tuple):
+            if isinstance(arg_value,Tuple):
                 return len(arg_value)
             else:
                 raise TypeError("Order built-in function expects a tuple argument.")
             
         elif self.name == "Null":
             if isinstance(arg_value,tuple) and len(arg_value) == 0:
-                return True
+                return TruthValue(True)
             else:   
-                return False
+                return TruthValue(False)
 
         elif self.name == 'Y*':
             from nodes import IdentifierNode # Local import to resolve circular dependency
@@ -135,11 +141,6 @@ class BuiltInFunction:
             recursive_call_env.define(func_name, actual_recursive_closure)
             return actual_recursive_closure
         
-        elif self.name == "Order":
-            if isinstance(arg_value, tuple):
-                return len(arg_value)
-            else:
-                raise TypeError("Order function expects a tuple argument.")
         else:
             raise NotImplementedError(f"Built-in function '{self.name}' not yet implemented.")
 
