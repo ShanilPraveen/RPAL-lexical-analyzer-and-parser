@@ -16,8 +16,7 @@ def main():
     # filename = sys.argv[1]
     # show_ast_only = "-ast" in sys.argv
 
-    code = """let PrintName () = Print 'Hello, World!' in
-    PrintName dummy 
+    code = """let A x = x+1 and B x = x+2 in Print(A, B)
 """
 
     lexer = Lexer(code)

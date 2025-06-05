@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from data_types import Tuple, TruthValue, Nil
 from environment import Closure, Environment, BuiltInFunction
 
 class Node(ABC):
@@ -121,7 +122,7 @@ class GammaNode(Node):
             if isinstance(param_node, IdentifierNode):
                 newEnv.define(param_node.value, rand)
             elif isinstance(param_node, CommaNode):
-                if not isinstance(rand, tuple) or len(rand) != len(param_node.params):
+                if not isinstance(rand, Tuple) or len(rand) != len(param_node.params):
                     raise TypeError(f"Tuple parameter mismatch. Expected {len(param_node.params)} arguments, but received {len(rand)}.")
                 for i, param in enumerate(param_node.params):
                     if isinstance(param, IdentifierNode):
@@ -144,7 +145,7 @@ class GammaNode(Node):
         elif isinstance(rator, BuiltInFunction):
             result = rator.execute(rand)
             return result
-        elif isinstance(rator, tuple) and isinstance(rand, int):
+        elif isinstance(rator, Tuple) and isinstance(rand, int):
             if len(rator)>=rand and rand>0:
                 result = rator[rand-1]
                 return result
@@ -182,13 +183,13 @@ class RnNode(Node):
         elif self.type == 'identifier':
             return env.lookup(self.value)
         elif self.type == 'nil':
-            return None
+            return Nil()  # Return an instance of Nil
         elif self.type == 'dummy':
             return 'dummy'
         elif self.type == 'true':
-            return True
+            return TruthValue(True)
         elif self.type == 'false':
-            return False
+            return TruthValue(False)
         else:
             raise ValueError(f"Unknown RnNode type encountered during interpretation: {self.type}")
     
@@ -277,7 +278,7 @@ class AssignmentNode(Node):
             env.define(self.v1.value, evaluated_e)
             return evaluated_e
         elif isinstance(self.v1, CommaNode):
-            if not isinstance(evaluated_e, tuple) or len(evaluated_e) != len(self.v1.params):
+            if not isinstance(evaluated_e, Tuple) or len(evaluated_e) != len(self.v1.params):
                 raise TypeError("Tuple assignment mismatch.")
             for i, vb_node in enumerate(self.v1.params):
                 if isinstance(vb_node, IdentifierNode):
@@ -458,7 +459,7 @@ class TauNode(Node):
     
     def interpret(self, env):
         interpreted_elements = [element.interpret(env) for element in self.elements]
-        return tuple(interpreted_elements)
+        return Tuple(interpreted_elements)
     
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
@@ -483,32 +484,18 @@ class AugNode(Node):
     def interpret(self, env):
         ipTa = self.Ta.interpret(env)
         ipTc = self.Tc.interpret(env)
-        if isinstance(ipTa, tuple) and isinstance(ipTc, tuple):
-            return ipTa + ipTc
-        elif isinstance(ipTa, tuple) and isinstance(ipTc, (int, str, bool)):
-            return ipTa + tuple([ipTc])
-        elif isinstance(ipTa, (int, str, bool)) and isinstance(ipTc, tuple):
-            return tuple([ipTa]) + ipTc
-        elif ipTa==None and ipTc==None:
-            return None
-        elif ipTa==None:
-            if isinstance(ipTc, tuple):
-                return ipTc
-            elif isinstance(ipTc, (int, str, bool)):
-                return (ipTc,)
+        if isinstance(ipTa, Tuple) and isinstance(ipTc, (int, str, TruthValue, Nil, Tuple)):
+            return ipTa.add(ipTc)
+        elif isinstance(ipTa, (int, str, TruthValue)) and isinstance(ipTc, Tuple):
+            return Tuple([ipTa]).add(ipTc)
+        elif isinstance(ipTa, Nil):
+            if isinstance(ipTc, (int, str, TruthValue, Nil, Tuple)):
+                return Tuple([ipTc])
             else:
-                raise TypeError("AugNode expects at least one operand to be a tuple or nil.")
-            
-        elif ipTc==None:
-            if isinstance(ipTa, tuple):
-                return ipTa
-            elif isinstance(ipTa, (int, str, bool)):
-                return (ipTa,)
-            else:
-                raise TypeError("AugNode expects at least one operand to be a tuple or nil.")
+                raise TypeError("aug expects at least one operand to be a tuple or nil.")
         
         else:
-            raise TypeError("AugNode expects at least one opernad to be a tuple or nil.")
+            raise TypeError("aug expects left opernad to be a tuple or nil and right opernad to be a String/ Integer/ Truthvalue/ Function/ nil/ dummy/.")
  
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
@@ -535,7 +522,7 @@ class ArrowNode(Node):
     def interpret(self, env):
         condition_result = self.condition.interpret(env)
 
-        if condition_result is True:
+        if condition_result.value is True:
             result = self.ifCase.interpret(env)
             return result
         else:
@@ -563,8 +550,8 @@ class NotNode(Node):
     
     def interpret(self, env):
         ipBp = self.Bp.interpret(env)
-        if isinstance(ipBp, bool):
-            return not ipBp
+        if isinstance(ipBp, TruthValue):
+            return TruthValue(not ipBp)
         else:
             raise TypeError(f"Expected a boolean value for NotNode, got {type(ipBp).__name__}")
     
@@ -591,12 +578,12 @@ class BAndOrNode(Node):
         if self.value == '&': # RPAL 'and'
             left_val = self.B1.interpret(env)
             if not left_val:
-                return False # Short-circuit
+                return left_val # Short-circuit
             return self.B2.interpret(env)
         elif self.value == 'or':
             left_val = self.B1.interpret(env)
             if left_val:
-                return True # Short-circuit
+                return left_val # Short-circuit
             return self.B2.interpret(env)
         else:
             raise ValueError(f"Unknown boolean operator: {self.value}")
@@ -624,16 +611,24 @@ class ConditionNode(Node):
     def interpret(self, env):
         ipA1 = self.a1.interpret(env)
         ipA2 = self.a2.interpret(env)
-        if isinstance(ipA1, (int, str)):
-            if self.value == 'eq': return ipA1 == ipA2
-            if self.value == 'ne': return ipA1 != ipA2
-            if self.value == '>': return ipA1 > ipA2
-            if self.value == '>=': return ipA1 >= ipA2
-            if self.value == '<': return ipA1 < ipA2
-            if self.value == '<=': return ipA1 <= ipA2
+        if isinstance(ipA1, (int, str)) and isinstance(ipA2, (int, str)):
+            if self.value == 'eq': return TruthValue(ipA1 == ipA2)
+            if self.value == 'ne': return TruthValue(ipA1 != ipA2)
+            if self.value == '>': return TruthValue(ipA1 > ipA2)
+            if self.value == '>=': return TruthValue(ipA1 >= ipA2)
+            if self.value == '<': return TruthValue(ipA1 < ipA2)
+            if self.value == '<=': return TruthValue(ipA1 <= ipA2)
             raise ValueError(f"Unknown comparison operator: {self.value}")
+        elif isinstance(ipA1, TruthValue) and isinstance(ipA2, TruthValue):
+            if self.value == 'eq': return TruthValue(ipA1.value == ipA2.value)
+            if self.value == 'ne': return TruthValue(ipA1.value != ipA2.value)
+            raise ValueError(f"Unknown comparison operator for TruthValue: {self.value}")
+        elif isinstance(ipA1, Nil) and isinstance(ipA2, Nil):
+            if self.value == 'eq': return TruthValue(True)
+            if self.value == 'ne': return TruthValue(False)
+            raise ValueError(f"Unknown comparison operator for Nil: {self.value}")
         else:
-            raise TypeError(f"Expected a boolean value for ConditionNode, got {type(ipA1).__name__}")
+            raise TypeError(f"Expected compareble values for ConditionNode, got {type(ipA1).__name__} and {type(ipA2).__name__}")
     
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
