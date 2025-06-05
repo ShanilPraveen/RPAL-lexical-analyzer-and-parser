@@ -40,7 +40,7 @@ class BuiltInFunction:
     def __init__(self, name):
         self.name = name
 
-    def execute(self, arg_value):
+    def execute(self, arg_value,arg_value_2=None):
         # Implement the logic for each built-in function here
         if self.name == "Print":
             # print("Executing Print built-in function with argument:")
@@ -54,8 +54,10 @@ class BuiltInFunction:
                 return False
             
         elif self.name == "Istruthvalue":
-            if arg_value == True:
+            if isinstance(arg_value, bool):
                 return True
+            else:
+                return False
             
         elif self.name == "Isstring":
             if type(arg_value) == str:
@@ -81,10 +83,41 @@ class BuiltInFunction:
             else:
                 return False
             
+        elif self.name == "Stem":
+            if type(arg_value) == str:
+                return arg_value[0]
+            else:
+                raise TypeError("Stem built-in function expects a string argument.")
+        
+        elif self.name == "Stern":
+            if type(arg_value) == str:
+                return arg_value[1:]
+            else:
+                raise TypeError("Stern built-in function expects a string argument.")
+            
+        elif self.name == "Conc":
+            if type(arg_value) == str and type(arg_value_2) == str:
+                return arg_value + arg_value_2
+            else:
+                raise TypeError("Conc built-in function expects two string arguments.")
+        
+        elif self.name == "Order":
+            if isinstance(arg_value,tuple):
+                return len(arg_value)
+            else:
+                raise TypeError("Order built-in function expects a tuple argument.")
+            
+        elif self.name == "Null":
+            if isinstance(arg_value,tuple) and len(arg_value) == 0:
+                return True
+            else:   
+                return False
+            
         elif self.name == 'Y*':
             raise NotImplementedError("Direct call to Y* built-in is not supported. It's used for recursion standardization.")
         
         raise NotImplementedError(f"Built-in function '{self.name}' not yet implemented.")
+
 
     def __call__(self, *args):
         """Call the built-in function with the provided arguments."""
