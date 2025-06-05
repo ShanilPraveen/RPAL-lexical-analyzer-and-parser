@@ -23,13 +23,13 @@ class Lexer:
 
         self.token_specification = [
             ('KEYWORD',   r'\b(?:' + '|'.join(self.keywords) + r')\b'),
+            ('COMMENT',    r'//.*'),
             ('STRING',     r"'([^'\\]|\\.)*'"),
             ('INTEGER',    r'\d+'),
             ('OPERATOR',   r'eq|ne|gr|ge|ls|le|<=|>=|->|\*\*|=>|[+\-*/=<>&|@]'),
             ('IDENTIFIER', r'[a-zA-Z][a-zA-Z0-9_]*'),
             ('DELIMITER',  r'[()\[\]{},;.]'),
             ('WHITESPACE', r'\s+'),
-            ('COMMENT',    r'/\*.*?\*/'),
             ('UNKNOWN',    r'.'),
         ]
 

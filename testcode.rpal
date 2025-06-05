@@ -1,2 +1,3 @@
-let posNeg n = n gr 0 -> 'Positive' | n ls 0 -> 'Negative' | 'Zero'
-in Print (posNeg 10)
+let square (x) = x * x
+in Print(square (5)) 
+//comment
