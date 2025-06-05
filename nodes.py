@@ -103,15 +103,15 @@ class GammaNode(Node):
         return GammaNode(stN, stE)
 
     def interpret(self, env):
-        # print(f"Interpreting GammaNode with N: {self.N} and E: {self.E} in environment: {env}")
-        rator = self.N.interpret(env)  # Interpret the N node in the current environment
-        rand = self.E.interpret(env)  # Interpret the E node in the current environment
-        # print(f"Rator: {rator}, Rand: {rand}")
+        rator = self.N.interpret(env)
+        rand = self.E.interpret(env)
 
         if isinstance(rator, Closure):
-            newEnv = Environment(parent=rator.env)
-            param_node = rator.lambdaNode.Vb
+            newEnv = Environment(parent=rator.env) # This uses rator.env as per your code
 
+            param_node = rator.lambdaNode.Vb # This uses rator.lambdaNode.Vb as per your code
+            
+            # --- Parameter Binding Logic ---
             if isinstance(param_node, IdentifierNode):
                 newEnv.define(param_node.value, rand)
             elif isinstance(param_node, CommaNode):
@@ -120,26 +120,32 @@ class GammaNode(Node):
                 for i, param in enumerate(param_node.params):
                     if isinstance(param, IdentifierNode):
                         newEnv.define(param.value, rand[i])
-                    elif isinstance(param, RnNode) and param.value == 'dummy':
+                    elif isinstance(param, RnNode) and param.value == 'dummy': # Ensure RnNode is imported
                         pass
                     else:
-                        raise NotImplementedError("Invalid parameter type in CommaNode")
+                        raise NotImplementedError(f"Unsupported parameter type in CommaNode: {type(param).__name__}")
             else:
-                if isinstance(param_node, RnNode) and param_node.value == 'dummy':
+                if isinstance(param_node, RnNode) and param_node.value == 'dummy': # Ensure RnNode is imported
                     pass
                 else:
                     raise TypeError(f"Unsupported parameter definition type: {type(param_node).__name__}")
-            return rator.lambdaNode.E.interpret(newEnv)
+            
+            
+            # --- Interpret the Closure's body ---
+            body_to_interpret = rator.lambdaNode.E # This is the AST node representing the function body
+            return body_to_interpret.interpret(newEnv) # This is the call that should trigger ArrowNode.interpret
 
         elif isinstance(rator, BuiltInFunction):
-            return rator.execute(rand)  # Execute the built-in function with the argument
+            result = rator.execute(rand)
+            return result
         elif isinstance(rator, tuple) and isinstance(rand, int):
             if len(rator)>=rand and rand>0:
-                return rator[rand-1]
+                result = rator[rand-1]
+                return result
             else:
                 raise IndexError(f"Index {rand} out of range for tuple {rator} with length {len(rator)}.")
         else:
-            raise TypeError(f"Attempted to apply a non-function value: {rator} of type {type(rator)}")
+            raise TypeError(f"Attempted to apply a non-function/non-tuple value: {rator} of type {type(rator)}")
             
 
     
@@ -258,7 +264,29 @@ class AssignmentNode(Node):
         return f"Assignment({self.v1}, {self.e})"
     
     def interpret(self, env):
-        raise RuntimeError("AssignmentNode should not be evaluated directly.")
+        evaluated_e = self.e.interpret(env)
+        print(f"Interpreting AssignmentNode: {self.v1} = {evaluated_e} in environment: {env}")
+        
+        if isinstance(self.v1, IdentifierNode):
+            env.define(self.v1.value, evaluated_e)
+            return evaluated_e
+        elif isinstance(self.v1, CommaNode):
+            if not isinstance(evaluated_e, tuple) or len(evaluated_e) != len(self.v1.params):
+                raise TypeError("Tuple assignment mismatch.")
+            for i, vb_node in enumerate(self.v1.params):
+                if isinstance(vb_node, IdentifierNode):
+                    env.define(vb_node.value, evaluated_e[i])
+                elif isinstance(vb_node, RnNode) and vb_node.value == 'dummy':
+                    pass
+                else:
+                    raise NotImplementedError(f"Unsupported parameter type in tuple assignment: {type(vb_node).__name__}")
+            return evaluated_e
+        else:
+            if isinstance(self.v1, RnNode) and self.v1.value == 'dummy':
+                return evaluated_e
+            else:
+                raise TypeError(f"Invalid left-hand side for assignment: {type(self.v1).__name__}")
+
     
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
@@ -303,6 +331,9 @@ class RecNode(Node):
     def standardize(self):
         stDb = self.Db.standardize()
         if isinstance(stDb, AssignmentNode):
+            if not isinstance(stDb.e, STLambdaNode):
+                raise TypeError("Recursive function body must standardize to an STLambdaNode.")
+            
             lambdaNode = STLambdaNode(stDb.v1, stDb.e)
             gammaNode = GammaNode(IdentifierNode('Y*'), lambdaNode)
             return AssignmentNode(stDb.v1, gammaNode)  # Return an AssignmentNode for the recursive definition
@@ -496,11 +527,14 @@ class ArrowNode(Node):
         return f"Arrow({self.condition}, {self.ifCase}, {self.elseCase})"
     
     def interpret(self, env):
-        ipCondition = self.condition.interpret(env)
-        if ipCondition:
-            return self.ifCase.interpret(env)
+        condition_result = self.condition.interpret(env)
+
+        if condition_result is True:
+            result = self.ifCase.interpret(env)
+            return result
         else:
-            return self.elseCase.interpret(env)
+            result = self.elseCase.interpret(env)
+            return result
     
     def print(self, indent=0):
         print(f'{self.indentationSymbol * indent}{self.value}')
