@@ -46,7 +46,42 @@ class BuiltInFunction:
             # print("Executing Print built-in function with argument:")
             print(arg_value)
             return "dummy"
-        if self.name == 'Y*':
+        
+        elif self.name == "Isinteger":
+            if type(arg_value) == int:
+                return True
+            else:
+                return False
+            
+        elif self.name == "Istruthvalue":
+            if arg_value == True:
+                return True
+            
+        elif self.name == "Isstring":
+            if type(arg_value) == str:
+                return True
+            else:
+                return False
+            
+        elif self.name == "Istuple":
+            if isinstance(arg_value, tuple):
+                return True
+            else:
+                return False
+        
+        elif self.name == "Isfunction":
+            if isinstance(arg_value, BuiltInFunction) or isinstance(arg_value, Closure):
+                return True
+            else:
+                return False
+            
+        elif self.name == "Isdummy":
+            if arg_value == "dummy":
+                return True
+            else:
+                return False
+            
+        elif self.name == 'Y*':
             raise NotImplementedError("Direct call to Y* built-in is not supported. It's used for recursion standardization.")
         
         raise NotImplementedError(f"Built-in function '{self.name}' not yet implemented.")
