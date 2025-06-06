@@ -1,10 +1,15 @@
 from Lexer import Lexer
 
-def test_lexer_tokens_simple():
-    code = "let x = 10 in x + 1"
+def test_tokenization_sample():
+    code = "let x = 10 in x + 5"
     lexer = Lexer(code)
     lexer.tokenize()
-    token_values = [t.value for t in lexer.tokens]
-    assert "let" in token_values
-    assert "x" in token_values
-    assert "=" in token_values
+    tokens = lexer.tokens
+
+    types = [token.type for token in tokens]
+    values = [token.value for token in tokens]
+
+    assert 'let' in types
+    assert 'identifier' in types
+    assert 'integer' in types
+    assert '+' in values

@@ -1,4 +1,3 @@
-from tree import build_tree
 from Lexer import Token
 from nodes import (LetNode, LambdaNode, RnNode, FcnFormNode, RecNode,
 GammaNode, CommaNode, AssignmentNode, AndNode, WithinNode, WhereNode,
