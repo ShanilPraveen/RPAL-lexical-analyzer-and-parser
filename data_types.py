@@ -23,7 +23,8 @@ class Tuple:
         return iter(self.elements)
     
     def add(self, other):
-        if isinstance(other, (int, str, bool, Tuple, Nil, TruthValue)):
+        from environment import Closure
+        if isinstance(other, (int, str, bool, Tuple, Nil, TruthValue, Closure)):
             return Tuple(self.elements + [other])
         else:
             raise TypeError(f"Cannot add {type(other).__name__} to Tuple.")

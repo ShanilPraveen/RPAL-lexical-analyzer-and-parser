@@ -207,22 +207,22 @@ class Parser:
         if token and token.value in ('gr', '>'):
             self.match(token.value)
             a2 = self.parse_A()
-            return ConditionNode(a1, a2, '>')
+            return ConditionNode(a1, a2, 'gr')
 
         elif token and token.value in ('ge', '>='):
             self.match(token.value)
             a2 = self.parse_A()
-            return ConditionNode(a1, a2, '>=')
+            return ConditionNode(a1, a2, 'ge')
 
         elif token and token.value in ('ls', '<'):
             self.match(token.value)
             a2 = self.parse_A()
-            return ConditionNode(a1, a2, '<')
+            return ConditionNode(a1, a2, 'ls')
 
         elif token and token.value in ('le', '<='):
             self.match(token.value)
             a2 = self.parse_A()
-            return ConditionNode(a1, a2, '<=')
+            return ConditionNode(a1, a2, 'le')
 
         elif token and token.value == 'eq':
             self.match('eq')
