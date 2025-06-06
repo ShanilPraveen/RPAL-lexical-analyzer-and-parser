@@ -20,7 +20,7 @@ def main():
 
     lexer = Lexer(code)
     lexer.tokenize()
-    #print("Tokens: "+str(lexer.tokens))
+    # print("Tokens: "+str(lexer.tokens))
 
     parser = Parser(lexer.tokens)
 

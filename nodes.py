@@ -110,8 +110,8 @@ class GammaNode(Node):
         return GammaNode(stN, stE)
 
     def interpret(self, env):
-        rator = self.N.interpret(env)
         rand = self.E.interpret(env)
+        rator = self.N.interpret(env)
 
         if isinstance(rator, Closure):
             newEnv = Environment(parent=rator.env) # This uses rator.env as per your code
@@ -458,7 +458,10 @@ class TauNode(Node):
         return f"Tau({self.elements})"
     
     def interpret(self, env):
-        interpreted_elements = [element.interpret(env) for element in self.elements]
+        interpreted_elements = []
+        for i in range(len(self.elements)-1, -1, -1):
+            ipElement = self.elements[i].interpret(env)
+            interpreted_elements.insert(0, ipElement)  # Insert at the beginning to maintain order
         return Tuple(interpreted_elements)
     
     def print(self, indent=0):
@@ -484,12 +487,12 @@ class AugNode(Node):
     def interpret(self, env):
         ipTa = self.Ta.interpret(env)
         ipTc = self.Tc.interpret(env)
-        if isinstance(ipTa, Tuple) and isinstance(ipTc, (int, str, TruthValue, Nil, Tuple)):
+        if isinstance(ipTa, Tuple) and isinstance(ipTc, (int, str, TruthValue, Nil, Tuple, Closure)):
             return ipTa.add(ipTc)
         elif isinstance(ipTa, (int, str, TruthValue)) and isinstance(ipTc, Tuple):
             return Tuple([ipTa]).add(ipTc)
         elif isinstance(ipTa, Nil):
-            if isinstance(ipTc, (int, str, TruthValue, Nil, Tuple)):
+            if isinstance(ipTc, (int, str, TruthValue, Nil, Tuple, Closure)):
                 return Tuple([ipTc])
             else:
                 raise TypeError("aug expects at least one operand to be a tuple or nil.")
@@ -614,10 +617,10 @@ class ConditionNode(Node):
         if isinstance(ipA1, (int, str)) and isinstance(ipA2, (int, str)):
             if self.value == 'eq': return TruthValue(ipA1 == ipA2)
             if self.value == 'ne': return TruthValue(ipA1 != ipA2)
-            if self.value == '>': return TruthValue(ipA1 > ipA2)
-            if self.value == '>=': return TruthValue(ipA1 >= ipA2)
-            if self.value == '<': return TruthValue(ipA1 < ipA2)
-            if self.value == '<=': return TruthValue(ipA1 <= ipA2)
+            if self.value == 'gr': return TruthValue(ipA1 > ipA2)
+            if self.value == 'ge': return TruthValue(ipA1 >= ipA2)
+            if self.value == 'ls': return TruthValue(ipA1 < ipA2)
+            if self.value == 'le': return TruthValue(ipA1 <= ipA2)
             raise ValueError(f"Unknown comparison operator: {self.value}")
         elif isinstance(ipA1, TruthValue) and isinstance(ipA2, TruthValue):
             if self.value == 'eq': return TruthValue(ipA1.value == ipA2.value)
