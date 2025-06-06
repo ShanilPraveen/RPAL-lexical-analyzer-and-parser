@@ -458,7 +458,10 @@ class TauNode(Node):
         return f"Tau({self.elements})"
     
     def interpret(self, env):
-        interpreted_elements = [element.interpret(env) for element in self.elements]
+        interpreted_elements = []
+        for i in range(len(self.elements)-1, -1, -1):
+            ipElement = self.elements[i].interpret(env)
+            interpreted_elements.insert(0, ipElement)  # Insert at the beginning to maintain order
         return Tuple(interpreted_elements)
     
     def print(self, indent=0):

@@ -77,7 +77,7 @@ class BuiltInFunction:
         else:
             if self.name == "Print":
                 # print("Executing Print built-in function with argument:")
-                print(current_args[0])
+                print(current_args[0], end="")
                 return "dummy"
             
             elif self.name == "Isinteger":

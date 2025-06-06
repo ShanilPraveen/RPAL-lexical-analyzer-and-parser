@@ -1,8 +1,9 @@
-Print (
-let f x y =
-(let g x y =
-(let h x y = x y x
-in h)
-in g)
-in f
-) 
+let fib_1 = 1
+in let fib_2 = 1
+in let rec fibo n = n eq 1 -> fib_1 | n eq 2 -> fib_2 | fibo (n - 1) + fibo (n - 2)
+
+in let rec range x y = (Isinteger x) & (x >= 0) & (Isinteger y) & (y >= 0) -> 
+						x le y -> (range (x + 1) y, Print(fibo x),Print ' ' ) | '' 
+					   | ''
+
+in Print(range 5 15)
