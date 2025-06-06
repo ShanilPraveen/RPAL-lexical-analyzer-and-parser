@@ -395,7 +395,7 @@ class Parser:
             elif token.type == 'nil':
                 self.match('nil')
                 return RnNode('nil', token.value) #can pass None
-            elif (token.type == 'delimiter' and token.value == '('):
+            elif (token.type == 'punction' and token.value == '('):
                 self.match('(')
                 e = self.parse_E()
                 self.expect(')')
@@ -499,7 +499,7 @@ class Parser:
                         return FcnFormNode(identifier, Vbs, e)
                 else:
                     raise SyntaxError("Unexpected end of input while parsing DbNode")
-            elif token.type == 'delimiter' and token.value == '(':
+            elif token.type == 'punction' and token.value == '(':
                 self.match('(')
                 d = self.parse_D()
                 self.expect(')')
@@ -522,9 +522,9 @@ class Parser:
             if token.type == 'identifier':
                 identifier = self.match('identifier')
                 return IdentifierNode(identifier.value)
-            elif token.type == 'delimiter' and token.value == '(':
+            elif token.type == 'punction' and token.value == '(':
                 self.match('(')
-                if self.peek() and self.peek().type == 'delimiter' and self.peek().value == ')':
+                if self.peek() and self.peek().type == 'punction' and self.peek().value == ')':
                     self.match(')')
                     return IdentifierNode('()')
                 else:
@@ -541,8 +541,8 @@ class Parser:
         paramToken = self.match('identifier')
         params = [IdentifierNode(paramToken.value)] if paramToken else []
 
-        while self.peek() and self.peek().type == 'delimiter' and self.peek().value == ',':
-            self.expect('delimiter')
+        while self.peek() and self.peek().type == 'punction' and self.peek().value == ',':
+            self.expect('punction')
             paramToken = (self.match('identifier'))
             params.append(IdentifierNode(paramToken.value))
         

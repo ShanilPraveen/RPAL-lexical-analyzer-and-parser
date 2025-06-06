@@ -1,3 +1,4 @@
-let Add5 x = x+5 and Mul10 x=x*10 and Div2 x=x/2
-in let T = (Add5, Mul10)
-in Print (T aug Div2)
+let Sum(A) = Psum (A,Order A )
+where rec Psum (T,N) = N eq 0 -> 0
+ | Psum(T,N-1)+T N
+in Print ( Sum (1,2,3,4,5) )

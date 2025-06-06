@@ -28,7 +28,7 @@ class Lexer:
             ('INTEGER',    r'\d+'),
             ('OPERATOR',   r'eq|ne|gr|ge|ls|le|<=|>=|or|not|->|\*\*|=>|[+\-*/=<>&|@]'),
             ('IDENTIFIER', r'[a-zA-Z][a-zA-Z0-9_]*'),
-            ('DELIMITER',  r'[()\[\]{},;.]'),
+            ('PUNCTION',  r'[()\[\]{},;.]'),
             ('WHITESPACE', r'\s+'),
             ('UNKNOWN',    r'.'),
         ]

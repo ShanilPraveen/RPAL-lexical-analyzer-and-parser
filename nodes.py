@@ -303,7 +303,7 @@ class AssignmentNode(Node):
 
 class FcnFormNode(Node):
     def __init__(self, name, Vbs, Exp):
-        super().__init__('function_form', 'fcn_form')
+        super().__init__('function_form', 'function_form')
         self.name = name
         self.Vbs = Vbs
         self.E = Exp

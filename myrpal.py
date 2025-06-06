@@ -28,18 +28,17 @@ def main():
         ast = parser.parse_E()
 
         if show_ast_only:
-            print("\n--- AST ---")
             ast.print()
 
-        else:
-            st = ast.standardize()
-            #st.print()
-            global_env = Environment()
-            global_env.defineBuiltInFunctions()
+
+        st = ast.standardize()
+        #st.print()
+        global_env = Environment()
+        global_env.defineBuiltInFunctions()
             
-            print("Output of the above program is:")
-            final_result = st.interpret(global_env)
-            # print("\nFinal Program Result:", final_result, "of type", type(final_result).__name__)
+        print("Output of the above program is:")
+        final_result = st.interpret(global_env)
+        #print("\nFinal Program Result:", final_result)
 
 
     except (SyntaxError, NameError, TypeError, ZeroDivisionError, NotImplementedError, ValueError, RuntimeError, IndexError) as e:
