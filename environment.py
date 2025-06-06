@@ -49,13 +49,16 @@ class Environment:
     
 
 class Closure:
+    count = 0
     def __init__(self, lambdaNode, env):
         self.lambdaNode = lambdaNode
         self.env = env
+        Closure.count += 1
+        self.ith = Closure.count
 
     def __str__(self):
         param_str = self.lambdaNode.Vb.value if hasattr(self.lambdaNode.Vb, 'value') else str(self.lambdaNode.Vb)
-        return f"Closure(param='{param_str}', body_node={self.lambdaNode.E}, defined_env={len(self.env.bindings)})"
+        return f"[lambda closure: {param_str}: {self.ith}]"
 
     def __repr__(self):
         return self.__str__()
