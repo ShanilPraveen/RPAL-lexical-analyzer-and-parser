@@ -39,7 +39,7 @@ def main():
             
             print("Output of the above program is:")
             final_result = st.interpret(global_env)
-            #print("\nFinal Program Result:", final_result)
+            # print("\nFinal Program Result:", final_result, "of type", type(final_result).__name__)
 
 
     except (SyntaxError, NameError, TypeError, ZeroDivisionError, NotImplementedError, ValueError, RuntimeError, IndexError) as e:

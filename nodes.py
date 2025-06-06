@@ -110,8 +110,8 @@ class GammaNode(Node):
         return GammaNode(stN, stE)
 
     def interpret(self, env):
-        rator = self.N.interpret(env)
         rand = self.E.interpret(env)
+        rator = self.N.interpret(env)
 
         if isinstance(rator, Closure):
             newEnv = Environment(parent=rator.env) # This uses rator.env as per your code
@@ -487,12 +487,12 @@ class AugNode(Node):
     def interpret(self, env):
         ipTa = self.Ta.interpret(env)
         ipTc = self.Tc.interpret(env)
-        if isinstance(ipTa, Tuple) and isinstance(ipTc, (int, str, TruthValue, Nil, Tuple)):
+        if isinstance(ipTa, Tuple) and isinstance(ipTc, (int, str, TruthValue, Nil, Tuple, Closure)):
             return ipTa.add(ipTc)
         elif isinstance(ipTa, (int, str, TruthValue)) and isinstance(ipTc, Tuple):
             return Tuple([ipTa]).add(ipTc)
         elif isinstance(ipTa, Nil):
-            if isinstance(ipTc, (int, str, TruthValue, Nil, Tuple)):
+            if isinstance(ipTc, (int, str, TruthValue, Nil, Tuple, Closure)):
                 return Tuple([ipTc])
             else:
                 raise TypeError("aug expects at least one operand to be a tuple or nil.")

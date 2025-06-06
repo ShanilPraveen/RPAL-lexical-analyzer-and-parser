@@ -10,6 +10,7 @@ class Environment:
         ("Istuple", 1),
         ("Isfunction", 1),
         ("Isdummy", 1),
+        ("ItoS", 1),
         ("Stem", 1),
         ("Stern", 1),
         ("Conc", 2),
@@ -77,7 +78,26 @@ class BuiltInFunction:
         else:
             if self.name == "Print":
                 # print("Executing Print built-in function with argument:")
-                print(current_args[0], end="")
+                if type(current_args[0]) == str:
+                    escape_char = False
+                    for char in current_args[0]:
+                        if escape_char:
+                            if char == "n":
+                                print("\n", end="")
+                            elif char == "t":
+                                print("\t", end="")
+                            elif char == "\\":
+                                print("\\", end="")
+                            else:
+                                print("\\"+char, end="")
+                            escape_char = False
+                        elif char == "\\":
+                            escape_char = True
+                        else:
+                            print(char, end="")
+
+                else:
+                    print(current_args[0], end="")
                 return "dummy"
             
             elif self.name == "Isinteger":
@@ -115,6 +135,12 @@ class BuiltInFunction:
                     return TruthValue(True)
                 else:
                     return TruthValue(False)
+                
+            elif self.name == "ItoS":
+                if type(current_args[0]) == int:
+                    return str(current_args[0])
+                else:
+                    raise TypeError("ItoS built-in function expects an integer argument.")
                 
             elif self.name == "Stem":
                 if type(current_args[0]) == str:
