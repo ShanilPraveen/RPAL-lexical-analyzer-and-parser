@@ -617,10 +617,10 @@ class ConditionNode(Node):
         if isinstance(ipA1, (int, str)) and isinstance(ipA2, (int, str)):
             if self.value == 'eq': return TruthValue(ipA1 == ipA2)
             if self.value == 'ne': return TruthValue(ipA1 != ipA2)
-            if self.value == '>': return TruthValue(ipA1 > ipA2)
-            if self.value == '>=': return TruthValue(ipA1 >= ipA2)
-            if self.value == '<': return TruthValue(ipA1 < ipA2)
-            if self.value == '<=': return TruthValue(ipA1 <= ipA2)
+            if self.value == 'gr': return TruthValue(ipA1 > ipA2)
+            if self.value == 'ge': return TruthValue(ipA1 >= ipA2)
+            if self.value == 'ls': return TruthValue(ipA1 < ipA2)
+            if self.value == 'le': return TruthValue(ipA1 <= ipA2)
             raise ValueError(f"Unknown comparison operator: {self.value}")
         elif isinstance(ipA1, TruthValue) and isinstance(ipA2, TruthValue):
             if self.value == 'eq': return TruthValue(ipA1.value == ipA2.value)

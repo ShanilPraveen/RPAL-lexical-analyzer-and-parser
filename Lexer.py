@@ -26,7 +26,7 @@ class Lexer:
             ('COMMENT',    r'//.*'),
             ('STRING',     r"'([^'\\]|\\.)*'"),
             ('INTEGER',    r'\d+'),
-            ('OPERATOR',   r'eq|ne|gr|ge|ls|le|<=|>=|->|\*\*|=>|[+\-*/=<>&|@]'),
+            ('OPERATOR',   r'eq|ne|gr|ge|ls|le|<=|>=|or|->|\*\*|=>|[+\-*/=<>&|@]'),
             ('IDENTIFIER', r'[a-zA-Z][a-zA-Z0-9_]*'),
             ('DELIMITER',  r'[()\[\]{},;.]'),
             ('WHITESPACE', r'\s+'),

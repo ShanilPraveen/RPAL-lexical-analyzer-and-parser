@@ -1,9 +1,14 @@
-let fib_1 = 1
-in let fib_2 = 1
-in let rec fibo n = n eq 1 -> fib_1 | n eq 2 -> fib_2 | fibo (n - 1) + fibo (n - 2)
-
-in let rec range x y = (Isinteger x) & (x >= 0) & (Isinteger y) & (y >= 0) -> 
-						x le y -> (range (x + 1) y, Print(fibo x),Print ' ' ) | '' 
-					   | ''
-
-in Print(range 5 15)
+let rec Rev S =
+     S eq '' -> ''
+     | (Rev(Stern S)) @Conc (Stem S )
+within
+     Pairs (S1,S2) =
+      not (Isstring S1 & Isstring S2) -> 'both args not strings'
+      | P (Rev S1, Rev S2)
+	where rec P (S1, S2) =
+	   S1 eq '' & S2 eq '' -> nil                                  
+	 | (Stern S1 eq '' & Stern S2 ne '') or
+	   (Stern S1 ne '' & Stern S2 eq '')
+	       -> 'bad strings'
+	 | (P (Stern S1, Stern S2) aug ((Stem S1) @Conc (Stem S2)))
+ in Print ( Pairs ('abc','def'))
