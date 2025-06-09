@@ -1,4 +1,4 @@
-PYTHON = python
+PYTHON = python3
 
 # Default target: runs the RPAL processor with the specified file
 run:

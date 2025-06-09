@@ -16,7 +16,9 @@ def main():
 
     filename = sys.argv[2] if len(sys.argv) > 2 else sys.argv[1]
     code = read_file(filename)
-    show_ast_only = "-ast" in sys.argv
+    flags = sys.argv
+    
+
 
     lexer = Lexer(code)
     lexer.tokenize()
@@ -27,17 +29,20 @@ def main():
     try:
         ast = parser.parse_E()
 
-        if show_ast_only:
+        if "-ast" in flags:
             ast.print()
 
-
         st = ast.standardize()
-        #st.print()
+
+        if "-st" in flags:
+            st.print()
+        
         global_env = Environment()
         global_env.defineBuiltInFunctions()
             
         print("Output of the above program is:")
         final_result = st.interpret(global_env)
+        print()
         #print("\nFinal Program Result:", final_result)
 
 
