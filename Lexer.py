@@ -18,18 +18,18 @@ class Lexer:
         self.tokens = []
         self.keywords = {
             'let', 'in', 'where', 'within', 'and', 'nil', 'aug',
-            'rec', 'fn', 'lambda', 'true', 'false',
+            'rec', 'fn', 'lambda', 'true', 'false', 'dummy',
         }
 
         self.token_specification = [
             ('KEYWORD',   r'\b(?:' + '|'.join(self.keywords) + r')\b'),
+            ('COMMENT',    r'//.*'),
             ('STRING',     r"'([^'\\]|\\.)*'"),
             ('INTEGER',    r'\d+'),
-            ('OPERATOR',   r'eq|ne|gr|ge|ls|le|<=|>=|->|\*\*|=>|[+\-*/=<>&|@]'),
+            ('OPERATOR',   r'eq|ne|gr|ge|ls|le|<=|>=|or|not|->|\*\*|=>|[+\-*/=<>&|@]'),
             ('IDENTIFIER', r'[a-zA-Z][a-zA-Z0-9_]*'),
-            ('DELIMITER',  r'[()\[\]{},;.]'),
+            ('PUNCTION',  r'[()\[\]{},;.]'),
             ('WHITESPACE', r'\s+'),
-            ('COMMENT',    r'/\*.*?\*/'),
             ('UNKNOWN',    r'.'),
         ]
 

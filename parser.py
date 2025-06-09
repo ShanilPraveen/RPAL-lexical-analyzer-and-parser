@@ -1,4 +1,3 @@
-from tree import build_tree
 from Lexer import Token
 from nodes import (LetNode, LambdaNode, RnNode, FcnFormNode, RecNode,
 GammaNode, CommaNode, AssignmentNode, AndNode, WithinNode, WhereNode,
@@ -208,22 +207,22 @@ class Parser:
         if token and token.value in ('gr', '>'):
             self.match(token.value)
             a2 = self.parse_A()
-            return ConditionNode(a1, a2, '>')
+            return ConditionNode(a1, a2, 'gr')
 
         elif token and token.value in ('ge', '>='):
             self.match(token.value)
             a2 = self.parse_A()
-            return ConditionNode(a1, a2, '>=')
+            return ConditionNode(a1, a2, 'ge')
 
         elif token and token.value in ('ls', '<'):
             self.match(token.value)
             a2 = self.parse_A()
-            return ConditionNode(a1, a2, '<')
+            return ConditionNode(a1, a2, 'ls')
 
         elif token and token.value in ('le', '<='):
             self.match(token.value)
             a2 = self.parse_A()
-            return ConditionNode(a1, a2, '<=')
+            return ConditionNode(a1, a2, 'le')
 
         elif token and token.value == 'eq':
             self.match('eq')
@@ -373,7 +372,7 @@ class Parser:
             -> 'false'  => 'false'
             -> 'nil'    => 'nil'
             -> '(' E ')'
-            -> 'dummy'  => 'dummy' ; - hasn't implemented
+            -> 'dummy'  => 'dummy' ;
         """
         token =self.peek()
         if token:
@@ -395,11 +394,14 @@ class Parser:
             elif token.type == 'nil':
                 self.match('nil')
                 return RnNode('nil', token.value) #can pass None
-            elif (token.type == 'delimiter' and token.value == '('):
+            elif (token.type == 'punction' and token.value == '('):
                 self.match('(')
                 e = self.parse_E()
                 self.expect(')')
                 return e
+            elif token.type == 'dummy':
+                self.match('dummy')
+                return RnNode('dummy', token.value) #can pass dummy
             else:
                 raise SyntaxError(f"Unexpected token: {token}")
         else:
@@ -496,7 +498,7 @@ class Parser:
                         return FcnFormNode(identifier, Vbs, e)
                 else:
                     raise SyntaxError("Unexpected end of input while parsing DbNode")
-            elif token.type == 'delimiter' and token.value == '(':
+            elif token.type == 'punction' and token.value == '(':
                 self.match('(')
                 d = self.parse_D()
                 self.expect(')')
@@ -512,18 +514,22 @@ class Parser:
         """
         Vb  -> '<IDENTIFIER>'
             -> '(' Vl ')'
-            -> '(' ')'         => '()' - hasn't implemented
+            -> '(' ')'         => '()'
         """
         token = self.peek()
         if token:
             if token.type == 'identifier':
                 identifier = self.match('identifier')
                 return IdentifierNode(identifier.value)
-            elif token.type == 'delimiter' and token.value == '(':
+            elif token.type == 'punction' and token.value == '(':
                 self.match('(')
-                v1 = self.parse_V1()
-                self.expect(')')
-                return v1
+                if self.peek() and self.peek().type == 'punction' and self.peek().value == ')':
+                    self.match(')')
+                    return IdentifierNode('()')
+                else:
+                    v1 = self.parse_V1()
+                    self.expect(')')
+                    return v1
             else:
                 raise SyntaxError(f"Unexpected token: {token} at {self.position}")
 
@@ -534,8 +540,8 @@ class Parser:
         paramToken = self.match('identifier')
         params = [IdentifierNode(paramToken.value)] if paramToken else []
 
-        while self.peek() and self.peek().type == 'delimiter' and self.peek().value == ',':
-            self.expect('delimiter')
+        while self.peek() and self.peek().type == 'punction' and self.peek().value == ',':
+            self.expect('punction')
             paramToken = (self.match('identifier'))
             params.append(IdentifierNode(paramToken.value))
         
@@ -545,4 +551,4 @@ class Parser:
             return params[0]
         else:
             return CommaNode(params)
-
+    
